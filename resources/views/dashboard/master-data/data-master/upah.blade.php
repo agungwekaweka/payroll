@@ -25,7 +25,7 @@
                 </button>
                 <div class="dropdown-menu">
                     <a class="dropdown-item" id="iBtnExportUpah">(1) Data Upah</a>
-                    <a class="dropdown-item" id="iBtnExport">(2) Data User</a>
+                    <a class="dropdown-item" id="iBtnExportDataUser">(2) Data User</a>
                 </div>
             </div>
 
@@ -164,7 +164,6 @@
         <thead>
             <tr>
                 <th><input type="checkbox" id="allCheckboxUpah"></th>
-                <th>Status Karyawan</th>
                 <th>Departemen</th>
                 <th>Sub Departemen</th>
                 <th>Pos</th>
@@ -193,44 +192,6 @@
                                 <th>Hutang Karyawan</th> -->
             </tr>
         </thead>
-        <tbody>
-            <tr>
-                <td></td>
-                <td><span class="badge bg-success text-dark">
-                        Active
-                    </span></td>
-                <td>IT</td>
-                <td>Aplikasi</td>
-                <td>Aplikasi</td>
-                <td>LV-001</td>
-                <td>1708</td>
-                <td>87834</td>
-                <td>User Trial</td>
-                <td>PKWT</td>
-                <td>2025-01-11</td>
-                <td>0</td>
-                <td>837483473847</td>
-                <td><span class="badge text-success">
-                        Normal
-                    </span></td>
-                <td><span class="badge text-success">
-                        Normal
-                    </span></td>
-                <td>2025-01-11 13:31:42</td>
-                <td>1,000,000.00</td>
-                <td>200000</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>12000</td>
-                <td>24000</td>
-                <td>24000</td>
-                <td><button type="button" id="iEditUpah" class="btn btn-warning">
-                        <i class="fas fa-edit"></i>
-                    </button></td>
-            </tr>
-        </tbody>
     </table>
 </div>
 
@@ -241,6 +202,115 @@ function loadUpah() {
     }
 
     $('#tableUpah').DataTable({
+        ajax: {
+                    url: "{{ url('dashboard/master-data/upah-karyawan/data') }}" 
+                },
+                columns: [
+                    {data: 'id'},
+                    {data: 'id_departemen'},
+                    {data: 'subDepartemen'},
+                    {data: 'pos'},
+                    {data: 'grade'},
+                    {data: 'id_absen'},
+                    {data: 'username'},
+                    {data: 'name'},
+                    {data: 'tieKontrak'},
+                    {data: 'doj'},
+                    {data: 'masaKerja'},
+                    {data: 'noRekening'},
+                    {data: 'tipeBpjs',
+                        render: function(data, type) {
+                            let color;
+                        if (data == '0') {
+                            status = 'Normal';
+                            color = 'green';
+                        }
+                        
+                        else if (data == '1') {
+                            status = 'Perusahaan';
+                            color = 'blue';
+                        }
+                        else if (data == '2') {
+                            status = 'Tidak Ikut';
+                            color = 'orange';
+                        }
+                        else
+                        {
+                            status = 'Error';
+                            color = 'red';
+                        }
+                        return '<span style="color:' + color + '">' + status + '</span>';
+                    }
+                    },
+                    {data: 'statusSkemaGaji',
+                        render: function(data, type) {
+                            let color;
+                        if (data == '1') {
+                            status = 'Normal';
+                            color = 'green';
+                        }
+                        
+                        else if (data == '2') {
+                            status = 'Harian';
+                            color = 'orange';
+                        }
+                        else
+                        {
+                            status = 'Error';
+                            color = 'red';
+                        }
+                        return '<span style="color:' + color + '">' + status + '</span>';
+                    }
+                    },
+
+                    {data: 'updatedAt'},
+                    {data: 'gajiPokok',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    {data: 'tunjanganJabatan',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    {data: 'tunjanganKeahlian',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    {data: 'tunjanganTransport',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    {data: 'tunjanganKomunikasi',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    {data: 'tambahanLainnya',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    {data: 'bpjsKes',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    {data: 'bpjsTk',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    {data: 'bpjsJp',
+                    className: "text-right" ,
+                    render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    // {data: 'simpananKoperasi',
+                    // className: "text-right" ,
+                    // render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    // {data: 'hutangKaryawan',
+                    // className: "text-right" ,
+                    // render: $.fn.dataTable.render.number( ',', '.', 2 )},
+                    { 
+                        data: 'action', 
+                        name: 'action', 
+                        orderable: false, 
+                        searchable: false,
+                        render: function(data, type, row) {
+                            return `
+                                <button type="button" id="iEditGrade" class="btn btn-warning edit-btn-upah" data-id="${row.username}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            `;
+                        }
+                    }
+                ],
         paging: true,
         searching: true,
         ordering: true,
@@ -295,15 +365,6 @@ function hideImportUpah() {
     document.querySelector(".table-responsive").style.display = "block";
 }
 
-document.addEventListener("DOMContentLoaded", function() {
-    const importButton = document.getElementById("iImportUpah");
-    if (importButton) {
-        importButton.addEventListener("click", function() {
-            showImportUpah();
-        });
-    }
-});
-
 // hide and show edit upah
 function showEditUpah() {
     document.getElementById("formEditUpah").style.display = "block";
@@ -316,12 +377,45 @@ function hideEditUpah() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
+
+    document.addEventListener("click", function(event) {
+        let editButton = event.target.closest(".edit-btn-upah");
+        if (editButton) {
+            let dataID = editButton.getAttribute("data-id"); // Correct way to get the ID
+            console.log(dataID);
+            window.location = '{{ url('master-data-upah-karyawan-edit') }}-'+dataID;
+        }
+    });
+
+    const importButton = document.getElementById("iImportUpah");
+    if (importButton) {
+        importButton.addEventListener("click", function() {
+            showImportUpah();
+        });
+    }
+
     const editButton = document.getElementById("iEditUpah");
     if (editButton) {
         editButton.addEventListener("click", function() {
             showEditUpah();
         });
     }
+
+    const exportUpah = document.getElementById("iBtnExportUpah");
+    if (exportUpah) {
+        exportUpah.addEventListener("click", function(e) {
+            e.preventDefault();
+            window.open('{{ url('dashboard/master-data/upah-karyawan/export-gaji') }}');
+        });
+    }
+    const exportUpahDataUser = document.getElementById("iBtnExportDataUser");
+    if (exportUpahDataUser) {
+        exportUpahDataUser.addEventListener("click", function(e) {
+            e.preventDefault();
+            window.open('{{ url('dashboard/master-data/upah-karyawan/export') }}');
+        });
+    }
+    
 });
 
 document.addEventListener('DOMContentLoaded', loadUpah);

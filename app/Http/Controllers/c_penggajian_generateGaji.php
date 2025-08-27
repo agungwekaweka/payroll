@@ -86,7 +86,8 @@ class c_penggajian_generateGaji extends Controller
                     if ($dataListPeriodeJadwal->doesntExist()) {  
                         $periode_jadwal = new periode_jadwal();
                         $periode_jadwal->id_periode = $node['id_periode'];
-                        $_periode = substr($node['periode'],strpos($node['periode'],"-")+1);
+                        // $_periode = substr($node['periode'],strpos($node['periode'],"-")+1);
+                        $_periode = $node['periode'];
                         $periode_jadwal->periode = $_periode; 
                         $periode_jadwal->tgl_awal = $node['tgl_awal'];
                         $periode_jadwal->tgl_akhir = $node['tgl_akhir'];

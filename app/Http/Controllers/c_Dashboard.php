@@ -211,5 +211,31 @@ class c_Dashboard extends Controller
         return $data;
     }
 
+    public function listKaryawan(Request $request)
+    {
+        $listKaryawanActive = DB::table('karyawan_hutang_perusahaan')
+        ->select('id_karyawan')
+        ->where('status','=','0')
+        ->get()->pluck('id_karyawan')->toArray();
+      
+        $data = [];
+        if (isset($_GET['search'])) {
+            $data['results'] = DB::table('users')
+                ->select('id_absen as id', DB::raw("CONCAT(id_absen, ' - ', name) as text"))
+                ->where('name', 'like', '%' . $_GET['search'] . '%')  
+                ->where('status','=','1')
+                ->whereNotIn('id_absen',$listKaryawanActive)
+                ->orderBy('id_absen', 'asc')
+                ->get();
+        } else {
+            $data['results'] = DB::table('users')
+                ->select('id_absen as id', DB::raw("CONCAT(id_absen, ' - ', name) as text"))
+                ->where('status','=','1')
+                ->whereNotIn('id_absen',$listKaryawanActive)
+                ->orderBy('id_absen', 'asc')
+                ->get();
+        }
+        return $data;
+    }
     
 }

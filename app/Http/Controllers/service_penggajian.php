@@ -74,20 +74,44 @@ class service_penggajian extends Controller
                         ->first();
 
                         // kehadiran
-                        $trn['kehadiran_karyawan'] = DB::table('gaji_kehadiran_absensi')
+                        // $trn['kehadiran_karyawan'] = DB::table('gaji_kehadiran_absensi')
+                        // ->select(
+                        //     'gaji_kehadiran_absensi.tot_libur as totLibur',
+                        //     'gaji_kehadiran_absensi.tot_ph as totPh',
+                        //     'gaji_kehadiran_absensi.tot_izin as totIzin',
+                        //     'gaji_kehadiran_absensi.tot_alfa as totAlfa',
+                        //     'gaji_kehadiran_absensi.tot_sakit as totSakit',
+                        //     'gaji_kehadiran_absensi.tot_cuti as totCuti',
+                        //     'gaji_kehadiran_absensi.tot_masuk as totMasuk'
+                        // )
+                        // ->where('gaji_kehadiran_absensi.id_karyawan',$username)
+                        // ->where('gaji_kehadiran_absensi.id_periode',$idPeriode)
+                        // ->first();
+
+                        $dataKehadiran = DB::table('gaji_kehadiran_absensi')
                         ->select(
-                            'gaji_kehadiran_absensi.tot_libur as totLibur',
-                            'gaji_kehadiran_absensi.tot_ph as totPh',
-                            'gaji_kehadiran_absensi.tot_izin as totIzin',
-                            'gaji_kehadiran_absensi.tot_alfa as totAlfa',
-                            'gaji_kehadiran_absensi.tot_sakit as totSakit',
-                            'gaji_kehadiran_absensi.tot_cuti as totCuti',
-                            'gaji_kehadiran_absensi.tot_masuk as totMasuk'
+                            'tot_libur as totLibur',
+                            'tot_ph as totPh',
+                            'tot_izin as totIzin',
+                            'tot_alfa as totAlfa',
+                            'tot_sakit as totSakit',
+                            'tot_cuti as totCuti',
+                            'tot_masuk as totMasuk'
                         )
-                        ->where('gaji_kehadiran_absensi.id_karyawan',$username)
-                        ->where('gaji_kehadiran_absensi.id_periode',$idPeriode)
-                        ->first();
-            
+                        ->where('id_karyawan', $username)
+                        ->where('id_periode', $idPeriode)
+                        ->first() ?? (object)[]; // jika null, jadikan object kosong
+
+                        $trn['kehadiran_karyawan'] = [
+                            'totLibur'  => $dataKehadiran->totLibur  ?? 0,
+                            'totPh'     => $dataKehadiran->totPh     ?? 0,
+                            'totIzin'   => $dataKehadiran->totIzin   ?? 0,
+                            'totAlfa'   => $dataKehadiran->totAlfa   ?? 0,
+                            'totSakit'  => $dataKehadiran->totSakit  ?? 0,
+                            'totCuti'   => $dataKehadiran->totCuti   ?? 0,
+                            'totMasuk'  => $dataKehadiran->totMasuk  ?? 0,
+                        ];
+
                         // get data
                         $trn['karyawan_gaji'] = DB::table('gaji_karyawan_sub_variable')
                         ->select(

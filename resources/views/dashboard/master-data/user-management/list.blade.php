@@ -254,6 +254,7 @@
                         );
                     array_select.push(rowId);
                     });
+                  
                     Swal.fire({
                     title: "Apakah ingin Disable data ini",
                     type: 'warning',
@@ -268,7 +269,7 @@
                             method: 'post',
                             data: {id: array_select},
                             success: function (response) {
-                                console.log(response);
+                             
                                 if (response === 'success') {
                                     Swal.fire({
                                         title: 'Data tersimpan!',

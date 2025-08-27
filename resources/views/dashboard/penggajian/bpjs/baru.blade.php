@@ -18,16 +18,16 @@
                             </a>  
                         <div class="collapse navbar-collapse" id="navbarSupportedContent">
 
-                        <!-- <ul class="navbar-nav me-auto mb-2 mb-lg-0 px-2">
+                        <ul class="navbar-nav me-auto mb-2 mb-lg-0 px-2">
                             <div class="dropdown">
                             <button class="btn btn-info dropdown-toggle" type="button" data-toggle="dropdown">
                                 Action Data
                             </button>
                             <div class="dropdown-menu">
-                                <a class="dropdown-item" id="iEditSelectedCheckBox">Edit Selected Checkbox</a>
+                                <a class="dropdown-item" id="iSyncroniseBpjs">Syncronise BPJS</a>
                             </div>
                             </div>
-                        </ul> -->
+                        </ul>
               
                         <ul class="navbar-nav me-auto mb-2 mb-lg-0 px-2">
                             <div class="dropdown">
@@ -140,6 +140,7 @@
         // const iEditSelectedCheckBox = $('#iEditSelectedCheckBox');
         const iExportAll = $('#iExportAll');
         const iExportSelectedCheckBox = $('#iExportSelectedCheckBox');
+        const iSyncroniseBpjs = $('#iSyncroniseBpjs');
       
         $(document).ready(function () {
             let listTable = $('#listTable').DataTable({
@@ -316,20 +317,58 @@
                 window.location = '{{ url('dashboard/penggajian/bpjs/data/edit') }}/'+dataID;
             });
 
-            // Action Data
-            // iEditSelectedCheckBox.click(function (e) {
-            //     e.preventDefault();
-            //     window.location = '{{ url('dashboard/penggajian/bpjs/data/edit') }}/'+dataID;
-            // });
-
-            // Action Export
-            // iExportAll.click(function (e) {
-            //     e.preventDefault();
-            //     window.open('{{ url('penggajian/bpjs-exportAll') }}');
-            // });
-             iExportAll.click(function (e) {
+            iExportAll.click(function (e) {
                 e.preventDefault();
                 window.open('{{ url('penggajian/bpjs/actionExport') }}/' +'exportAll/'+'-');
+            });
+
+            iSyncroniseBpjs.click(function (e) {
+                e.preventDefault();
+                    Swal.fire({
+                    title: "Apakah ingin Syncronise BPJS?",
+                    type: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#3085d6',
+                    cancelButtonColor: '#d33',
+                    confirmButtonText: 'Syncronise',
+                    allowEscapeKey: false,
+                    allowOutsideClick: false,
+                   
+                    }).then((result) => { 
+                    if (result.value) {
+                        Swal.fire({
+                        title: 'Mohon Ditunggu !',
+                        html: 'sedang memproses data...',// add html attribute if you want or remove
+                            allowOutsideClick: false,
+                            onBeforeOpen: () => {
+                        Swal.showLoading()
+                        },
+                        });
+                        $.ajax({
+                            url: '{{ url('penggajian/bpjs-syncronise') }}',
+                            method: 'post',
+                            data: $(this).serialize(),
+                            success: function (response) {
+                                console.log(response);
+                                if (response === 'success') {
+                                    Swal.fire({
+                                        title: 'Data tersimpan!',
+                                        type: 'success',
+                                        onClose: function () {
+                                              window.location.reload();
+                                        }
+                                    })
+                                } else {
+                                    Swal.fire({
+                                        title: 'Gagal',
+                                        text: 'Silahkan coba lagi',
+                                        type: 'error',
+                                    })
+                                }
+                            }
+                        });
+                    }
+                });
             });
 
             iExportSelectedCheckBox.click(function (e) {

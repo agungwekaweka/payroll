@@ -174,7 +174,7 @@
                                             @if($i_ <= 10) 
                                             
                                               <!-- disable variable tidak diperlukan -->
-                                              @if($m['id_variable']=='VR-006' || $m['id_variable']=='VR-004' || $m['id_variable']=='VR-010' || $m['id_variable']=='VR-011')
+                                              @if($m['id_variable']=='VR-006' || $m['id_variable']=='VR-010' || $m['id_variable']=='VR-011')
                                             <input name="variabels[{{ $m['id_variable'] }}]" type="text" class="form-control" id="{{ $m['id_variable'] }}" value="{{ number_format($m['nominal']) }}"readOnly >
                                             @else
                                             <input name="variabel[{{ $m['id_variable'] }}]" type="text" class="form-control" id="{{ $m['id_variable'] }}" value="{{ $m['nominal'] }}" >
@@ -202,7 +202,7 @@
                         <div class="card-footer bg-whitesmoke">
                             <div class="row justify-content-end">
                                 <div class="col-sm-12 col-lg-2 mt-2 mb-lg-0">
-                                    <button type="button" class="btn btn-block btn-outline-danger" onclick="window.location = '{{ url('dashboard/penggajian/upah-karyawan') }}'">
+                                    <button type="button" class="btn btn-block btn-outline-danger" onclick="window.location = '{{ url()->previous() }}'">
                                         <i class="fas fa-arrow-left mr-2"></i>Kembali
                                     </button>
                                 </div>

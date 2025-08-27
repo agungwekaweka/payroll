@@ -175,16 +175,50 @@ class c_penggajian_dataLembur extends Controller
         return json_encode($data);
     }
 
-    public function submit(Request $request) {
-            $userLogin = request()->session()->get('username');
-           
-            $_idKaryawan = $request->idKaryawan;
-            $_tglLembur = date('Y-m-d',strtotime($request->tglLembur));
-            $_jamLembur = $request->jamLembur;
-            $_keterangan = $request->keterangan;
-    
-            try {
-                DB::beginTransaction();
+    public function dataEdit(Request $request) 
+    {
+        $idLembur = $request->id;
+        $data =  DB::table('gaji_lembur')
+        ->select(
+           'gaji_lembur.id as id',
+           'gaji_lembur.id_periode as idPeriode',
+           'departemen.departemen as id_departemen',
+           'departemen_sub.sub_departemen as subDepartemen',
+           'users.pos as pos',
+           'grade.level as grade',
+           'gaji_lembur.id_karyawan as id_absen',
+           'users.username as username',
+           'users.name as name',
+           'users.tipe_kontrak as tieKontrak',
+           'gaji_lembur.updated_at as updatedAt',
+           'gaji_lembur.tgl as tanggal',
+           'gaji_lembur.jam_lembur as jamLembur',
+            DB::raw('(FORMAT((gaji_lembur.total_upah),2)) as totalUpah'),
+            'gaji_lembur.total_jam as totalJam',
+            DB::raw('(FORMAT((gaji_lembur.nominal),2)) as nominal'),
+            'gaji_lembur.keterangan as keterangan',
+            'gaji_lembur.pic as pic')
+            ->join('users','users.id_absen','=','gaji_lembur.id_karyawan')
+            ->join('departemen','departemen.id_dept','=','gaji_lembur.id_dept')
+            ->join('departemen_sub','departemen_sub.id_subDepartemen','=','gaji_lembur.id_sub_dept')
+            ->join('grade','grade.id_grade','users.grade')
+            ->where('gaji_lembur.id',$idLembur)
+            ->orderBy('gaji_lembur.tgl','asc')
+            ->first();
+        return $data;
+    }
+
+    public function submit(Request $request) 
+    {
+        $userLogin = request()->session()->get('username');
+        $type = $request->type;
+        try {
+            DB::beginTransaction(); 
+            if ($type == 'baru') {
+                $_idKaryawan = $request->idKaryawan;
+                $_tglLembur = date('Y-m-d',strtotime($request->tglLembur));
+                $_jamLembur = $request->jamLembur;
+                $_keterangan = $request->keterangan;
                 // get ID Periode
                 $c_classPenggajian = new c_classPenggajian;
                 $_val = $c_classPenggajian->getPeriodeBerjalan(); 
@@ -202,30 +236,119 @@ class c_penggajian_dataLembur extends Controller
                     $c_classPenggajian = new c_classPenggajian;
                     $_val = $c_classPenggajian->tambahLembur($idPeriode,$_idKaryawan,$_tglLembur,$_jamLembur, $_keterangan);
 
-                        // insert history
-                        $_keterangan = 'Tambah Lembur ID Periode : ' . $idPeriode . ' ID Karyawan : '. $_idKaryawan . ' Tanggal : '. $_tglLembur. ' Jam Lembur : '. $_jamLembur. ' Keterangan : '. $_keterangan;
+                    // insert history
+                    $_keterangan = 'Tambah Lembur ID Periode : ' . $idPeriode . ' ID Karyawan : '. $_idKaryawan . ' Tanggal : '. $_tglLembur. ' Jam Lembur : '. $_jamLembur. ' Keterangan : '. $_keterangan;
             
-                        $_requestValue['tipe'] = 0;
-                        $_requestValue['menu'] ='Penggajian';
-                        $_requestValue['module'] = 'Data Lembur';
-                        $_requestValue['keterangan'] = $_keterangan;
-                        $_requestValue['pic'] = $userLogin;
+                    $_requestValue['tipe'] = 0;
+                    $_requestValue['menu'] ='Penggajian';
+                    $_requestValue['module'] = 'Data Lembur';
+                    $_requestValue['keterangan'] = $_keterangan;
+                    $_requestValue['pic'] = $userLogin;
 
-                        $c_class = new c_classHistory;
-                        $c_class = $c_class->insertHistory($_requestValue);
+                    $c_class = new c_classHistory;
+                    $c_class = $c_class->insertHistory($_requestValue);
+                }
+            } elseif ($type == 'edit') {
+                $idLembur = $request->idLembur;
+                $jamLembur = $request->jamLembur;
+                $nominal = $request->nominal;
+                $note = $request->note;
+                
+                $dataID = DB::table('gaji_lembur')
+                ->where('id',$idLembur)
+                ->first();
+
+                if($nominal=='0' || $nominal==0)
+                {
+                    // hitung sistem 
+                    $_idKaryawan = $dataID->id_karyawan;
+                    $idPeriode = $dataID->id_periode;
+                    // get rumus (Total Upah) code GS-001
+                    $_totalUpah=0;
+                    $c_classRumus = new c_classRumus;
+                    $_totalUpah = $c_classRumus->getRumus('GS-001',$_idKaryawan); 
+            
+                    $_nominalLembur=$nominal;
+                    $_btsNominalLembur=0;
+                    $_btsNominalLembur = DB::table('utility_variable')
+                    ->select('nominal')
+                    ->where('id_variable','UV-002')
+                    ->first();
+                    $_batasNominalLembur = $_btsNominalLembur->nominal;
+                    // cek apakah mempunyai tunjangan jabatan VR-002
+                    $_tunjanganJabatan = 0;
+                    $karyawanSubVariableGaji = DB::table('gaji_karyawan_sub_variable')
+                    ->select(
+                    'gaji_karyawan_sub_variable.id_variable',
+                    'gaji_karyawan_sub_variable.nominal')
+                    ->where('gaji_karyawan_sub_variable.id_variable','VR-002')
+                    ->where('gaji_karyawan_sub_variable.id_karyawan',$_idKaryawan)
+                    ->where('gaji_karyawan_sub_variable.id_periode',$idPeriode)
+                    ->first();
+                    $_tunjanganJabatan = $karyawanSubVariableGaji->nominal;
+                    if($_totalUpah <= $_batasNominalLembur && $_tunjanganJabatan == 0)
+                    {
+                        // get rumus (Nominal Lembur) code LM-001
+                        $_nominal=0;
+                        $c_classRumus = new c_classRumus;
+                        $_nominal = $c_classRumus->getRumus('LM-001',$_idKaryawan); 
+                        $_nominalLembur = $_nominal*$jamLembur;
+                    }
+                    else
+                    {
+                        $_nominalLembur=0;
+                    }
+
+                    DB::table('gaji_lembur')
+                    ->where('id',$idLembur)
+                    ->update([
+                        'total_jam' => $jamLembur,
+                        'nominal' => $_nominalLembur,
+                        'keterangan' => $note,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                        'pic' => $userLogin
+                    ]);
+                }
+                else
+                {
+                    DB::table('gaji_lembur')
+                    ->where('id',$idLembur)
+                    ->update([
+                        'total_jam' => $jamLembur,
+                        'nominal' => $nominal,
+                        'keterangan' => $note,
+                        'updated_at' => date('Y-m-d H:i:s'),
+                        'pic' => $userLogin
+                    ]);
                 }
 
-                DB::commit();
-          
-                return 'success';
-            } catch (\Exception $ex) {
+                // Hitung Lembur Karyawan 
+                $c_classPenggajian = new c_classPenggajian;
+                $result = $c_classPenggajian->updateDataLemburKaryawanPeriode($dataID->id_periode,$dataID->id_karyawan,$jamLembur,$nominal,$note);
+                
+                // insert history
+                $_keterangan = 'Update Lembur ID Periode : ' . $dataID->id_periode . ' ID Karyawan : '. $dataID->id_karyawan . ' Jam Lembur : '. $jamLembur. 'Nominal : '. $nominal.' Keterangan : '. $note;
+            
+                $_requestValue['tipe'] = 0;
+                $_requestValue['menu'] ='Penggajian';
+                $_requestValue['module'] = 'Data Lembur';
+                $_requestValue['keterangan'] = $_keterangan;
+                $_requestValue['pic'] = $userLogin;
+
+                $c_class = new c_classHistory;
+                $c_class = $c_class->insertHistory($_requestValue);
+                
+            }
+            DB::commit();
+            return 'success';
+        } catch (\Exception $ex) {
                 DB::rollBack();
                 return response()->json($ex);
-            }
         }
+    }
 
-        public function imporDataLembur(Request $request) 
-        {
+    public function imporDataLembur(Request $request) 
+    {
             $username = request()->session()->get('username');
             try{
                 // get ID Periode
@@ -259,10 +382,10 @@ class c_penggajian_dataLembur extends Controller
             } catch (\Exception $ex) {
                 return response()->json([$ex]);
             }
-        }
+    }
 
-        public function actionData (Request $request)
-        {
+    public function actionData (Request $request)
+    {
             $userLogin = request()->session()->get('username');
             $typeActionData = $request->typeActionData;
             $idData = $request->idData;
@@ -277,7 +400,7 @@ class c_penggajian_dataLembur extends Controller
                                 $dataKaryawan = DB::table('gaji_lembur')
                                 ->where('id',$v)
                                 ->first();
-                          
+                        
                                 $c_classPenggajian = new c_classPenggajian;
                                 $c_classPenggajian = $c_classPenggajian->deleteLembur($dataKaryawan->id_periode,$dataKaryawan->id_karyawan,$v);
                         
@@ -300,16 +423,16 @@ class c_penggajian_dataLembur extends Controller
         
                 return 'success';
             } catch (\Exception $ex) {
+                dd($ex);
                 return response()->json($ex);
             }
-        }
+    }
 
-        public function actionSyncronise()
-        {
+    public function actionSyncronise()
+    {
             try
             {
                 DB::beginTransaction();
-
                 // get ID Periode
                 $c_classPenggajian = new c_classPenggajian;
                 $_val = $c_classPenggajian->getPeriodeBerjalan(); 
@@ -323,7 +446,7 @@ class c_penggajian_dataLembur extends Controller
                     // get Data Periode
                     $periode = $_val;
                     $idPeriode = $periode->idPeriode;
-                
+              
                     $tglAwal = $periode->tgl_awal;
                     $tglAkhir = $periode->tgl_akhir;
                   
@@ -333,26 +456,10 @@ class c_penggajian_dataLembur extends Controller
                     // $_url= 'http://192.168.0.75:8092/api/get_request_overtime_karyawan?tanggal_awal='.$tglAwal.'&tanggal_akhir='.$tglAkhir;
                     $response = Http::get($_url);
                     $jsonData = $response->json();
-               
+           
                     $totalKaryawan=0;
                     foreach($jsonData['data'] as $x => $node)
                     {
-                  
-                        // "id_overtime" => "OT-9525-000000"
-                        // "departemen" => "Finance & Accounting"
-                        // "sub_departemen" => "Finance"
-                        // "grade" => "Officer"
-                        // "name" => "Sri Wahyuningsih"
-                        // "nik" => "02-0121-006"
-                        // "no_telephone" => "6285740112428"
-                        // "id_karyawan" => "9525"
-                        // "nip" => "-"
-                        // "tgl_pengajuan" => "2024-02-05 12:50:24"
-                        // "tgl_lembur" => "2024-02-05"
-                        // "jam_lembur" => "1.00"
-                        // "total_jam" => "0.00"
-                        // "status" => "1"
-                        // "keterangan" => "-"
                         $jamLembur=0;
                         $idOvertime = $node['id_overtime'];
                         $nik = $node['nik'];
@@ -360,10 +467,11 @@ class c_penggajian_dataLembur extends Controller
                         $tglLembur = $node['tgl_lembur'];
                         $jamLembur = $node['jam_lembur'];
                         $keterangan = $node['keterangan'];
-                    
                         // Hitung Lembur Karyawan
+                        $idPeriode_=0;
+                        $idPeriode_ = $idPeriode -1;
                         $c_classPenggajian = new c_classPenggajian;
-                        $_val = $c_classPenggajian->tambahLembur($idPeriode,$idKaryawan,$tglLembur,$jamLembur, $keterangan);
+                        $_val = $c_classPenggajian->tambahLembur($idPeriode_,$idKaryawan,$tglLembur,$jamLembur, $keterangan); 
                     }
 
                      // insert history
@@ -384,9 +492,10 @@ class c_penggajian_dataLembur extends Controller
             } catch (\Exception $ex) {
                 return response()->json($ex);
             }
-        }
+    }
 
-        public function actionExport($_typeActionData,$_idData) {
+    public function actionExport($_typeActionData,$_idData) 
+    {
             $userLogin = request()->session()->get('username');
             try {
                 DB::beginTransaction();  
@@ -410,10 +519,10 @@ class c_penggajian_dataLembur extends Controller
                 DB::rollBack();
                 return json_encode([$ex]);
             }
-        }
+    }
 
-        public function submitModule(Request $request)
-        {
+    public function submitModule(Request $request)
+    {
             $userLogin = request()->session()->get('username');
             $idModule = $request->idModule;
     
@@ -452,6 +561,5 @@ class c_penggajian_dataLembur extends Controller
                } catch (\Exception $ex) {
                    return response()->json($ex);
                }
-        }
-     
+    }
 }

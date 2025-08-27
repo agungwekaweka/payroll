@@ -260,7 +260,7 @@ $menu = \App\Http\Controllers\c_Dashboard::sidebar();
                             showConfirmButton: false,
                             timer: 1000,
                             onClose: function() {
-                                window.location = "{{ url('dashboard/master/user-management/list') }}";
+                                window.location = '{{ url()->previous() }}';
                             }
                         });
                     } else {

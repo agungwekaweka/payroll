@@ -4,52 +4,23 @@
         <h4>Tambah Data Hutang</h4>
     </div>
     <form id="formData">
+    <input type="hidden" name="type" value="baru">
         <div class="modal-body">
             <div class="form-group">
-                <label for="dept">Departemen</label>
-                <select style="width: 100%" id="iDepartemenUser" name="departemen" required></select>
-            </div>
-
-            <div class="form-group">
-                <label for="sub-dept">Sub Departemen</label>
-                <select style="width: 100%" id="iSubDepartemen" name="subDepartemen" required></select>
-            </div>
-
-            <div class="form-group">
-                <label>Pos</label>
-                <input name="pos" type="text" class="form-control" autofocus>
-            </div>
-
-            <div class="form-group">
-                <label for="grade">Grade</label>
-                <select style="width: 100%" id="iGrade" name="grade" required></select>
-            </div>
-
-            <div class="form-group">
-                <label>ID Absen (4 digit)</label>
-                <input name="idAbsen" type="text" class="form-control" autofocus>
-            </div>
-            <div class="form-group">
-                <label>NIP</label>
-                <input name="username" type="text" class="form-control" autofocus>
-                <small>Password untuk user baru sama dengan NIP. Setiap user dapat mengganti password melalui menu User
-                    Profile.</small>
-            </div>
-            <div class="form-group">
-                <label for="provi">Nama Karyawan</label>
-                <select style="width: 100%" id="iNamaKaryawan" name="idKaryawan" required></select>
+                <label>Nama Karyawan</label>
+                <select style="width: 100%" id="iNama" name="idKaryawan" required></select>
             </div>
             <div class="form-group">
                 <label>Nominal</label>
                 <input name="nominal" type="text" class="form-control" autofocus>
             </div>
             <div class="form-group">
-                <label>Tenor</label>
+                <label>Tenor (bulan)</label>
                 <input name="tenor" type="text" class="form-control" autofocus>
             </div>
             <div class="form-group">
                 <label for="exampleFormControlTextarea1">Keterangan</label>
-                <textarea class="form-control" id="exampleFormControlTextarea1" style="height: 150px;"></textarea>
+                <textarea class="form-control" name="note" style="height: 150px;"></textarea>
             </div>
         </div>
         <div class="card-footer bg-whitesmoke">
@@ -75,54 +46,27 @@
         <h4>Edit Data Hutang</h4>
     </div>
     <form id="formData">
-        <div class="modal-body">
+    <input type="hidden" name="type" value="edit">
+    <div class="modal-body">
             <div class="form-group">
-                <label for="dept">Departemen</label>
-
-                <select style="width: 100%" id="iDepartemenUser" name="departemen" required></select>
-            </div>
-
-            <div class="form-group">
-                <label for="sub-dept">Sub Departemen</label>
-
-                <select style="width: 100%" id="iSubDepartemen" name="subDepartemen" required></select>
-            </div>
-
-            <div class="form-group">
-                <label>Pos</label>
-                <input name="pos" type="text" class="form-control" autofocus>
-            </div>
-
-            <div class="form-group">
-                <label for="grade">Grade</label>
-                <select style="width: 100%" id="iGrade" name="grade" required></select>
-            </div>
-
-            <div class="form-group">
-                <label>ID Absen (4 digit)</label>
-                <input name="idAbsen" type="text" class="form-control" autofocus>
+                <label>ID Hutang</label>
+                <input  name="idHutang" type="text" class="form-control" readOnly>
             </div>
             <div class="form-group">
-                <label>NIP</label>
-                <input name="username" type="text" class="form-control" autofocus>
-                <small>Password untuk user baru sama dengan NIP. Setiap user dapat mengganti password melalui menu User
-                    Profile.</small>
-            </div>
-            <div class="form-group">
-                <label for="nama">Nama</label>
-                <select style="width: 100%" id="iNamaKaryawan" name="idKaryawan" required></select>
+                <label>Nama Karyawan</label>
+                <input  name="name" type="text" class="form-control" readOnly>
             </div>
             <div class="form-group">
                 <label>Nominal</label>
                 <input name="nominal" type="text" class="form-control" autofocus>
             </div>
             <div class="form-group">
-                <label>Tenor</label>
+                <label>Tenor (bulan)</label>
                 <input name="tenor" type="text" class="form-control" autofocus>
             </div>
             <div class="form-group">
                 <label for="exampleFormControlTextarea1">Keterangan</label>
-                <textarea class="form-control" id="exampleFormControlTextarea1" style="height: 150px;"></textarea>
+                <textarea class="form-control" name="note" style="height: 150px;"></textarea>
             </div>
         </div>
         <div class="card-footer bg-whitesmoke">
@@ -133,15 +77,19 @@
                     </button>
                 </div>
                 <div class="col-sm-12 col-lg-2 mt-2 mb-lg-0">
-                    <button type="submit" class="btn btn-block btn-success"><i
-                            class="fas fa-check mr-2"></i>Simpan</button>
+                    <button id="btnPelunasan" type="button" class="btn btn-block btn-warning">
+                        <i class="fas fa-wallet mr-2"></i>Pelunasan
+                    </button>
+                </div>
+                <div class="col-sm-12 col-lg-2 mt-2 mb-lg-0">
+                    <button type="submit" class="btn btn-block btn-success">
+                        <i class="fas fa-check mr-2"></i>Simpan</button>
                 </div>
             </div>
         </div>
     </form>
 </div>
 <!-- Form Edit Hutang End -->
-
 
 <button type="button" id="iTambahHutang" class="btn btn-primary w-auto mb-3">
     <i class="fas fa-plus mr-3"></i>Tambah
@@ -152,12 +100,11 @@
         <thead>
             <tr>
                 <th><input type="checkbox" id="allCheckboxHutang"></th>
+                <th>Status</th>
                 <th>Departemen</th>
                 <th>Sub Departemen</th>
-                <th>Pos</th>
                 <th>Grade</th>
-                <th>ID Absen / Username</th>
-                <th>NIK</th>
+                <th>ID Karyawan</th>
                 <th>Nama</th>
                 <th>Nominal Hutang</th>
                 <th>Tenor</th>
@@ -165,24 +112,6 @@
                 <th>Action</th>
             </tr>
         </thead>
-        <tbody>
-            <tr>
-                <td></td>
-                <td>IT</td>
-                <td>Aplikasi & System</td>
-                <td>Aplikasi & System</td>
-                <td>LV-005</td>
-                <td>1708</td>
-                <td>834834884</td>
-                <td>User Trial</td>
-                <td>1000000</td>
-                <td>1 Bulan</td>
-                <td>ket</td>
-                <td><button type="button" id="iEditHutang" class="btn btn-warning mr-2" title="Edit User">
-                        <i class="fas fa-edit"></i>
-                    </button></td>
-            </tr>
-        </tbody>
     </table>
 </div>
 
@@ -193,6 +122,51 @@ function loadHutang() {
     }
 
     $('#tableHutang').DataTable({
+        ajax: {
+                url: '{{ url('dashboard/hutang-perusahaan/anggota/data') }}'
+            },
+                columns: [
+                    {data: 'id_hutang'},
+                    {data: 'status',
+                        render: function(data, type) {
+                            let color;
+                        if (data == '0') {
+                            status = 'Hutang';
+                            color = 'red';
+                        }
+                        else if (data == '1') {
+                            status = 'Lunas';
+                            color = 'green';
+                        }
+                        else {
+                            status = 'Error';
+                            color = 'orange';
+                        }
+                        return '<span style="color:' + color + '">' + status + '</span>';
+                    }
+                    },
+                    {data: 'departemen'},
+                    {data: 'sub_departemen'},      
+                    {data: 'grade'},
+                    {data: 'id_karyawan'},  
+                    {data: 'name'},
+                    {data: 'total'},
+                    {data: 'tenor'},
+                    {data: 'note'},
+                    { 
+                        data: 'action', 
+                        name: 'action', 
+                        orderable: false, 
+                        searchable: false,
+                        render: function(data, type, row) {
+                            return `
+                                <button type="button" id="iEditHutang" class="btn btn-warning edit-btn-hutang" data-id="${row.id_hutang}">
+                                    <i class="fas fa-edit"></i>
+                                </button>
+                            `;
+                        }
+                    }
+                ],
         paging: true,
         searching: true,
         ordering: true,
@@ -233,9 +207,7 @@ function loadHutang() {
             $('#allCheckboxHutang').prop('checked', false);
         }
     });
-
 }
-
 
 // hide and show form add hutang
 function showFormAddHutang() {
@@ -248,6 +220,48 @@ function hideFormAddHutang() {
     document.querySelector(".table-responsive").style.display = "block";
 }
 
+// hide and show form edit hutang
+function showFormEditHutang(idHutang) {
+    document.getElementById("formEditHutang").style.display = "block";
+    document.getElementById("formAddHutang").style.display = "none";
+
+    // Make an AJAX request to fetch the grade data
+    $.ajax({
+        url: `/dashboard/hutang-perusahaan/anggota/dataList`, // Laravel route
+        type: "POST",
+        data: {
+            _token: $('meta[name="csrf-token"]').attr('content'), // CSRF Token
+            id_hutang: idHutang // Input variable to send
+        },
+        success: function(response) {
+
+            let hutangData = response[0]; // Ambil objek pertama dalam array
+      
+            // Populate the form fields with response data
+            $('input[name="idHutang"]').val(hutangData['id_hutang']);
+            $('input[name="name"]').val(hutangData['name']);
+            $('input[name="nominal"]').val(hutangData['total']);
+            $('input[name="tenor"]').val(hutangData['tenor']);
+            $('textarea[name="note"]').val(hutangData['note']);
+         
+            // Store the ID for updating the record later
+            $('#formData').attr('data-id', idHutang);
+
+            // Show the modal form
+            $('#editHutangModal').modal('show');
+        },
+        error: function(xhr) {
+            console.error("Error fetching data: ", xhr);
+        }
+    });
+}
+
+function hideFormEditHutang() {
+    document.getElementById("formEditHutang").style.display = "none";
+    document.querySelector(".table-responsive").style.display = "block";
+}
+
+// Button Add Hutang
 document.addEventListener("DOMContentLoaded", function() {
     const addHutangButton = document.getElementById("iTambahHutang");
     if (addHutangButton) {
@@ -257,25 +271,132 @@ document.addEventListener("DOMContentLoaded", function() {
     }
 });
 
-// hide and show form edit hutang
-function showFormEditHutang() {
-    document.getElementById("formEditHutang").style.display = "block";
-    document.getElementById("formAddHutang").style.display = "none";
-}
+// Drop down name
+document.addEventListener("DOMContentLoaded", function () {
+    let namaKaryawanDropdown = document.getElementById("iNama");
 
-function hideFormEditHutang() {
-    document.getElementById("formEditHutang").style.display = "none";
-    document.querySelector(".table-responsive").style.display = "block";
-}
+    let dataID;
+    if (!namaKaryawanDropdown) {
+        console.error("Dropdown nama tidak ditemukan!");
+        return;
+    }
 
-document.addEventListener("DOMContentLoaded", function() {
-    const editHutangButton = document.getElementById("iEditHutang");
-    if (editHutangButton) {
-        editHutangButton.addEventListener("click", function() {
-            showFormEditHutang();
+    function loadNamaKaryawan() {
+        $(namaKaryawanDropdown).select2({
+            ajax: {
+                url: '{{ url('list_karyawan') }}',
+                dataType: 'json',
+                delay: 250,
+                data: function (params) {
+                    console.log("Parameter Pencarian:", params);
+                    return { search: params.term };
+                },
+                processResults: function (data) {
+                    console.log("Hasil API:", data);
+                    return { results: data.results };
+                }
+            },
+            // minimumInputLength: 1 // Hanya mulai mencari setelah 1 karakter diketik
         });
+     
+        $(namaKaryawanDropdown).change(function(){
+                var value = $(this).val();
+                dataID = value;   
+        });
+    }
+
+    setTimeout(() => {
+        loadNamaKaryawan();
+    }, 500);
+});
+
+// Action Edit
+document.addEventListener("DOMContentLoaded", function() {
+   document.addEventListener("click", function(event) {
+        let editButton = event.target.closest(".edit-btn-hutang");
+        if (editButton) {
+            let idHutang = editButton.getAttribute("data-id"); // Correct way to get the ID
+            showFormEditHutang(idHutang);
+        }
+    });
+});
+
+// Button Pelunasan
+document.addEventListener("DOMContentLoaded", function () {
+    const addPelunasan = document.getElementById("btnPelunasan");
+   
+    if (addPelunasan) {
+        addPelunasan.addEventListener("click", function () {
+            let idHutang = $('input[name="idHutang"]').val();
+            $.ajax({
+                url: `/dashboard/hutang-perusahaan/anggota/pelunasan`, // Laravel route
+                type: "POST",
+                data: {
+                        _token: $('meta[name="csrf-token"]').attr('content'), // CSRF Token
+                        id_hutang: idHutang // Input variable to send
+                    },
+                    success: function(response) {
+                        console.log(response);
+                        loadHutang();
+                        hideFormEditHutang();
+                    },
+                    error: function(xhr) {
+                        console.error("Error update data: ", xhr);
+                    }
+            });
+        })
     }
 });
 
-document.addEventListener('DOMContentLoaded', loadHutang);
+// Button Submit
+document.addEventListener("DOMContentLoaded", function() {
+    // Tangani submit form tambah
+    document.querySelector("#formAddHutang form").addEventListener("submit", function(event) {
+        event.preventDefault(); // Mencegah reload halaman
+        let formData = new FormData(this); // Ambil data form
+        $.ajax({
+            url: "{{ url('dashboard/hutang-perusahaan/anggota/submit') }}", // Sesuaikan dengan route Laravel
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+            },
+            success: function(response) {
+                loadHutang();
+                hideFormAddHutang();
+            },
+            error: function(xhr) {
+                console.error("Error:", xhr.responseText);
+                alert("Terjadi kesalahan saat menambahkan data.");
+            }
+        });
+    });
+
+    // Tangani submit form edit
+    document.querySelector("#formEditHutang form").addEventListener("submit", function(event) {
+        event.preventDefault(); // Mencegah reload halaman
+        let formData = new FormData(this); // Ambil data form
+        $.ajax({
+            url: "{{ url('dashboard/hutang-perusahaan/anggota/submit') }}", // Sesuaikan dengan route Laravel
+            type: "POST",
+            data: formData,
+            processData: false,
+            contentType: false,
+            headers: {
+                "X-CSRF-TOKEN": document.querySelector('meta[name="csrf-token"]').getAttribute("content")
+            },
+            success: function(response) {
+                loadHutang();
+                hideFormEditHutang();
+            },
+            error: function(xhr) {
+                console.error("Error:", xhr.responseText);
+                alert("Terjadi kesalahan saat mengubah data.");
+            }
+        });
+    });
+});
+
 </script>

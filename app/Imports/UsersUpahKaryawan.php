@@ -72,7 +72,7 @@ class UsersUpahKaryawan implements ToModel,WithHeadingRow
                 'grouping_sub_variable.variable as variable')
                 ->orderBy('grouping_sub_variable.id_variable','asc')
                 ->where('isDell','1')
-                ->limit(7)
+                ->limit(12)
                 ->get();
 
                 $keterangan='';
@@ -87,7 +87,16 @@ class UsersUpahKaryawan implements ToModel,WithHeadingRow
                     $_status = $c_karyawan->updateUpahkaryawanVariable($_idKaryawan,$val->id_variable,$value); 
                     $keterangan = 'ID Karyawan : '. $_idKaryawan. ' ID Variable : '. $val->id_variable. ' Nominal : '. $value.' | '. $keterangan;    
                 }
-                
+
+                $dataKaryawan=DB::table('users')
+                ->select('users.tipe_bpjs')
+                ->where('id_absen','=',$_idKaryawan)
+                ->first();
+                    
+                // Update BPJS Karyawan Variable
+                $c_classBpjs = new c_classKaryawan;
+                $result = $c_classBpjs->updateVariableBPJSKaryawan($_idKaryawan, $dataKaryawan->tipe_bpjs);
+
                 // insert history
                 $_keterangan = 'Update Upah Karyawan Variable - Excel | Data : '. $keterangan;
                                 

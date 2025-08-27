@@ -26,30 +26,11 @@ class service_karyawan extends Controller
                 $lstKaryawanActive = $jsonDecode->karyawanActive;
                 foreach($lstKaryawanActive as $x)
                 {
-                    $_users['id_departemen'] =  $x->id_departemen;
-                    $_users['id_departemen_sub'] =  $x->id_departemen_sub;
-                    $_users['pos'] =  $x->pos;
-                    $_users['grade'] =  $x->id_grade;
-                    $_users['id_absen'] =  $x->id_absen;       
-                    $_users['username'] = $x->username;
-                    $_users['name'] = $x->name; 
-                    $_users['email'] = $x->email;
-                    $randomNumber = random_int(100000, 999999);
-                    $_users['password'] =$randomNumber; 
-                    $_users['no_hp'] = $x->no_hp;
-                    $_users['id_skema_hari_kerja'] = $x->id_skema_hari_kerja;
-                    $_users['doj'] = $x->doj;
-                    $_users['dob'] = $x->dob;
-                    $_users['system'] = 1;
-                    $_users['status'] = $x->status; 
-                    $this->insertKarywan($_users);
-                }
-
-                // karyawan NonActive
-                $listKaryawanNonActive = $jsonDecode->karyawanNonActive;
-                {
-                    
-                    foreach($listKaryawanNonActive as $x)
+                    if($x->id_departemen == 'DP017' || $x->id_departemen == 'DP018') // except pis & auditor
+                    {
+    
+                    }
+                    else
                     {
                         $_users['id_departemen'] =  $x->id_departemen;
                         $_users['id_departemen_sub'] =  $x->id_departemen_sub;
@@ -66,8 +47,42 @@ class service_karyawan extends Controller
                         $_users['doj'] = $x->doj;
                         $_users['dob'] = $x->dob;
                         $_users['system'] = 1;
-                        $_users['status'] = 2; // status non active payroll user =2; 1=active
+                        $_users['status'] = $x->status; 
                         $this->insertKarywan($_users);
+                    }
+           
+                }
+
+                // karyawan NonActive
+                $listKaryawanNonActive = $jsonDecode->karyawanNonActive;
+                {
+                    
+                    foreach($listKaryawanNonActive as $x)
+                    {
+                        if($x->id_departemen == 'DP017' || $x->id_departemen == 'DP018') // except pis & auditor
+                        {
+        
+                        }
+                        else
+                        {
+                            $_users['id_departemen'] =  $x->id_departemen;
+                            $_users['id_departemen_sub'] =  $x->id_departemen_sub;
+                            $_users['pos'] =  $x->pos;
+                            $_users['grade'] =  $x->id_grade;
+                            $_users['id_absen'] =  $x->id_absen;       
+                            $_users['username'] = $x->username;
+                            $_users['name'] = $x->name; 
+                            $_users['email'] = $x->email;
+                            $randomNumber = random_int(100000, 999999);
+                            $_users['password'] =$randomNumber; 
+                            $_users['no_hp'] = $x->no_hp;
+                            $_users['id_skema_hari_kerja'] = $x->id_skema_hari_kerja;
+                            $_users['doj'] = $x->doj;
+                            $_users['dob'] = $x->dob;
+                            $_users['system'] = 1;
+                            $_users['status'] = 2; // status non active payroll user =2; 1=active
+                            $this->insertKarywan($_users);
+                        }
                     }
                 }
             }

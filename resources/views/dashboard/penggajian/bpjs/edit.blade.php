@@ -87,7 +87,6 @@
                                         <select class="form-control" id="iTipeBpjs" name="tipeBpjs">
                                         <option value="{{ $data['user']->tipeBpjs }}" selected="selected">{{ $data['user']->tipeBpjs }}</option>
                                             <option value="0">(0) Normal</option>
-                                            <option value="1">(1) Perusahaan</option>
                                             <option value="2">(2) Tidak Ikut</option>
                                         </select>
                                </td>
@@ -139,8 +138,8 @@
                                 <h6 class="ml-5">{{ $g['group']['name'] }}</h6>
                             </div>
                             <div class="col-lg-9">
+                                <div id="form-bpjs">
                                 <div class="row">
-                                  
                                     @foreach($g['menu'] as $m)
                                     <div class="col-lg-12">
                                         <div class="custom-control custom-checkbox">
@@ -150,14 +149,16 @@
                                             <input type="checkbox" name="permission[]" class="custom-control-input" id="permission_{{ $m['id'] }}" value="{{ $m['id'] }}">
                                             @endif
                                             <label class="custom-control-label" >{{ $m['variable'] }}</label>
-                                        
-                                            <input name="variabels[{{ $m['id_variable'] }}]" type="text" class="form-control" id="{{ $m['id_variable'] }}" value="{{ number_format($m['nominal']) }}"readOnly >
-                                         
+                                            @if($i_<=3)
+                                             <input name="variabels[{{ $m['id_variable'] }}]" type="text" class="form-control" id="{{ $m['id_variable'] }}" value="{{ number_format($m['nominal']) }}"readOnly >
+                                            @else 
+                                             <input name="variabels[{{ $m['id_variable'] }}]" type="text" class="form-control" id="{{ $m['id_variable'] }}" value="{{ number_format($m['nominal']) }}" >
+                                            @endif
                                         </div>
                                     </div>
                                     @php($i_++)
                                     @endforeach
-
+                                </div>
                                 </div>
                             </div>
                         </div>
@@ -175,13 +176,16 @@
                         </div>
                         <div class="card-footer bg-whitesmoke">
                             <div class="row justify-content-end">
-                                
                                 <div class="col-sm-12 col-lg-2 mt-2 mb-lg-0">
-                                    <button type="button" class="btn btn-block btn-outline-danger" onclick="window.location = '{{ url('dashboard/penggajian/bpjs') }}'">
+                                    <button type="button" class="btn btn-block btn-outline-danger" onclick="window.location='{{ url('dashboard/penggajian/data-penggajian') }}'">
                                         <i class="fas fa-arrow-left mr-2"></i>Kembali
                                     </button>
                                 </div>
-                            
+                                <div class="col-sm-12 col-lg-2 mt-2 mt-lg-0">
+                                    <button type="button" id="btnSubmit" class="btn btn-block btn-success">
+                                    <i class="fas fa-check-circle"></i> Simpan
+                                </button>
+                            </div>
                             </div>
                         </div>
                    
@@ -196,6 +200,7 @@
 @section('script')
 <script type="text/javascript">
         let formData = $('#formData');
+        let btnSubmit = $('#btnSubmit');
 
         function updateVariable(table,cell) {
             let data = cell.getData();
@@ -246,6 +251,48 @@
                     updateVariable(listTable,cell);
                 }
             });
+        });
+
+        btnSubmit.click(function (e) {
+            e.preventDefault();
+            // Ambil data dari form utama dan form bpjs
+            let formMainData = $('#formData').serializeArray();
+            let formBpjsData = $('#form-bpjs :input').serializeArray();
+
+            // Gabungkan semua data
+            let allData = $.param(formMainData.concat(formBpjsData));
+            Swal.fire({
+                        title: 'Mohon Ditunggu !',
+                        html: 'sedang memproses data...',// add html attribute if you want or remove
+                            allowOutsideClick: false,
+                            onBeforeOpen: () => {
+                        Swal.showLoading()
+                        },
+            });
+            $.ajax({
+                url: "{{ url('dashboard/penggajian/bpjs/update') }}",
+                method: 'post',
+                data: allData,
+                success: function(response) {
+                    if (response === 'success') {
+                        Swal.fire({
+                            icon: 'success',
+                            title: 'Data Tersimpan',
+                            showConfirmButton: false,
+                            timer: 1000,
+                            onClose: function() {
+                                window.history.back();
+                            }
+                        });
+                    } else {
+                        Swal.fire({
+                            icon: 'error',
+                            title: 'Data Gagal Tersimpan',
+                            text: 'Silahkan coba lagi atau hubungi Developer',
+                        });
+                    }
+                }
+            })
         });
 
         formData.submit(function(e) {

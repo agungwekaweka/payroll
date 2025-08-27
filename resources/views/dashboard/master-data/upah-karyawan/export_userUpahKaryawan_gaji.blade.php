@@ -13,7 +13,7 @@
             <th >NAMA</th>
             @php($i=1)
             @foreach($komponenGaji as $x)   
-            @if($i < 8)     
+            @if($i < 13)     
             <th >{{ $x->variable }}</th>
             @else()
             @break 
@@ -43,7 +43,7 @@
                 @foreach($karyawan_gaji as $c)
                   
                     @if($d->id_absen==$c->id_karyawan)
-                        @if($ii < 8)
+                        @if($ii < 13)
                         <td bgcolor="#d9ead3" >{{ $c->nominal }}</td>
                         @else()
                         @endif

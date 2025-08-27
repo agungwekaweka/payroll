@@ -7,6 +7,8 @@ use App\karyawan_group_sub;
 use App\karyawan_group_sub_variable;
 use App\mod_user;
 use App\karyawan_group_sub_variable_bpjs;
+use App\karyawan_hutang_perusahaan;
+use App\karyawan_hutang_perusahaan_detail;
 use Session;
 
 use Illuminate\Support\Facades\Crypt;
@@ -19,16 +21,17 @@ use Carbon\Carbon;
 
 class c_classKaryawan extends Controller
 {
-       
     // get Masa Kerja Karyawan
     public function getMasaKerja($tanggalMasuk)
     {
-            date_default_timezone_set('Asia/Jakarta');
-            $date = date("Y-m-d");
-            $toDate = Carbon::parse($date);
-            $fromDate = Carbon::parse($tanggalMasuk);
-            $bulan = $toDate->diffInMonths($fromDate);
-            return $bulan;
+        date_default_timezone_set('Asia/Jakarta');
+        $date = date("Y-m-d");
+        $toDate = Carbon::parse($date);
+        $fromDate = Carbon::parse($tanggalMasuk);
+        // $bulan = $toDate->diffInMonths($fromDate);
+        $diff = $toDate->diff($fromDate);
+        $bulan = ($diff->y * 12) + $diff->m; // Konversi tahun ke bulan + sisa bulan
+        return $bulan;
     }
 
     // get Usia Karyawan
@@ -137,7 +140,7 @@ class c_classKaryawan extends Controller
                 'status'=> $_status     
             ]);
                
-            // Update Grade Tunjangan Transport
+            // Update Grade (Tunjangan Transport & Jabatan)
             $c_classKaryawan = new c_classPenggajian();     
             $_tunjanganTransport = $c_classKaryawan->updateTunjanganTransport($_idAbsen);
 
@@ -391,7 +394,6 @@ class c_classKaryawan extends Controller
          }                  
      }
 
-
     // update Master Variable Upah Karyawan
     public function updateUpahkaryawanVariable($idKaryawan,$idVariable,$nominal)
     {
@@ -424,60 +426,219 @@ class c_classKaryawan extends Controller
         }                  
     }
 
-    // public function insertGroupSub()
-    // {
-    //     try
-    //     {
-    //         DB::beginTransaction();
-    //             $grupSub = DB::table('group_sub')
-    //                 ->select('group_sub.id as id','group_sub.id_sub_group as idSubGroup','group_sub.sub_group as subGroup')
-    //                 ->where('group_sub.isDell','1')
-    //                 ->get();
+    // insert Hutang Perusahaan Karyawan
+    public function insertHutangPerusahaanKaryawan($request)
+    {
+        $idDepartemen=''; $departemen=''; $idSubDepartemen=''; $subDepartemen=''; $name=''; $grade=''; $note='-';
+        $idHutang=''; $idKaryawan=''; $tenor=''; $total=''; $totalAngsuran=''; $status=''; $reff=''; $years=Carbon::now()->format('Y');
+        if (isset($request['id_departemen']) && $request['id_departemen']!='' ) {$idDepartemen = $request['id_departemen'];}
+        if (isset($request['departemen']) && $request['departemen']!='' ) {$departemen = $request['departemen'];}
+        if (isset($request['id_sub_departemen']) && $request['id_sub_departemen']!='' ) {$idSubDepartemen = $request['id_sub_departemen'];}
+        if (isset($request['sub_departemen']) && $request['sub_departemen']!='' ) {$subDepartemen = $request['sub_departemen'];}
+        if (isset($request['id_hutang']) && $request['id_hutang']!='' ) {$idHutang = $request['id_hutang'];}
+        if (isset($request['id_karyawan']) && $request['id_karyawan']!='' ) {$idKaryawan = $request['id_karyawan'];}
+        if (isset($request['name']) && $request['name']!='' ) {$name = $request['name'];}
+        if (isset($request['grade']) && $request['grade']!='' ) {$grade = $request['grade'];}
+        if (isset($request['tenor']) && $request['tenor']!='' ) {$tenor = $request['tenor'];}
+        if (isset($request['total']) && $request['total']!='' ) {$total = $request['total'];}
+        if (isset($request['total_angsuran']) && $request['total_angsuran']!='' ) {$totalAngsuran = $request['total_angsuran'];}
+        if (isset($request['note']) && $request['note']!='' ) {$note = $request['note'];}
+        if (isset($request['status']) && $request['status']!='' ) {$status = $request['status'];}
+        if (isset($request['reff']) && $request['reff']!='' ) {$reff = $request['reff'];}
+        if (isset($request['years']) && $request['years']!='' ) {$years = $request['years'];}
+       
+        try
+        {
+            // insert Master
+            $data = new karyawan_hutang_perusahaan();
+            $data->id_hutang = $idHutang;
+            $data->id_departemen = $idDepartemen;
+            $data->departemen = $departemen;
+            $data->id_sub_departemen = $idSubDepartemen;
+            $data->sub_departemen = $subDepartemen;
+            $data->id_karyawan = $idKaryawan; 
+            $data->name = $name;
+            $data->grade = $grade;
+            $data->tenor = $tenor; 
+            $data->total = $total; 
+            $data->total_angsuran = $totalAngsuran; 
+            $data->note = $note;
+            $data->status = 0; 
+            $data->reff = $reff; 
+            $data->years = $years;
+            $data->save();
+          
+            $nominal=0;
+            $nominal = $total/$tenor;
+         
+            for ($i = 1; $i <= $tenor; $i++) {
+                // insert Detail
+                $data = new karyawan_hutang_perusahaan_detail();
+                $data->id_hutang = $idHutang;
+                $data->id_karyawan = $idKaryawan;
+                $data->angsuran_ke = $i;
+                $data->nominal = $nominal;
+                $data->status_bayar = '0';
+                $data->reff = $reff;
+                $data->save();
+            }
 
-    //             foreach($grupSub as $v)
-    //             {
-    //                     $karyawanGroupSub = new karyawan_group_sub();
-    //                     $karyawanGroupSub->id_karyawan = $idAbsen;
-    //                     $karyawanGroupSub->id_sub_group = $v->idSubGroup;
-    //                     $karyawanGroupSub->nominal = 0;
-    //                     $karyawanGroupSub->isDell = '1';
-    //                     $karyawanGroupSub->save();
-    //             }
-    //         DB::commit(); 
-    //         return 'success';
-    //     } catch (\Exception $ex) {
-    //         DB::rollBack();
-    //         $err = [$ex];
-    //         return response()->json($ex);
-    //     }
-    // }
+            // update variable master karyawan group sub variable
+          
+            DB::table('karyawan_group_sub_variable')
+            ->where('id_karyawan','=',$idKaryawan)
+            ->where('id_variable','VR-009')
+            ->update([
+                'nominal' => $nominal,
+            ]);
 
-    // public function insertGroup()
-    // {
-    //     try
-    //     {
-    //         DB::beginTransaction();
-    //         $grup = DB::table('grup')
-    //                 ->select('grup.id as id','grup.id_group as idGroup','grup.group as grup')
-    //                 ->where('grup.isDell','1')
-    //                 ->get();
-                    
-    //         foreach($grup as $x)
-    //         {
-    //             $karyawanGroup = new karyawan_group();
-    //             $karyawanGroup->id_karyawan = $idAbsen;
-    //             $karyawanGroup->id_group = $x->idGroup;
-    //             $karyawanGroup->nominal = 0;
-    //             $karyawanGroup->isDell = '1';
-    //             $karyawanGroup->save();
-    //         }
-    //         DB::commit(); 
-    //         return 'success';
-    //     } catch (\Exception $ex) {
-    //         DB::rollBack();
-    //         $err = [$ex];
-    //         return response()->json($ex);
-    //     }
-    // }
+            return 'success';
+          } catch (\Exception $ex) {
+            // insert history
+            $_keterangan = 'Error--insertHutangPerusahaanKaryawan--'.$ex;
+                   
+            $_requestValue['tipe'] = 0;
+            $_requestValue['menu'] ='Karyawan';
+            $_requestValue['module'] = 'Class Karyawan';
+            $_requestValue['keterangan'] = $_keterangan;
+            $_requestValue['pic'] = 'system';
+
+            $c_class = new c_classHistory;
+            $c_class = $c_class->insertHistory($_requestValue);  
+            return response()->json($ex);
+          }
+    }
+
+    // update Hutang Perusahaan Karyawan
+    public function updateHutangPerusahaanKaryawan($request)
+    {
+        $id = '';
+        $idHutang='';
+
+        $id = $request['id'];
+        $idHutang = $request['id_hutang'];
+        
+        $updateData=[];
+        if (isset($request['tenor']) && $request['tenor']!='' ) {$updateData['tenor'] = $request['tenor'];}
+        if (isset($request['total']) && $request['total']!='' ) {$updateData['total'] = $request['total'];}
+        if (isset($request['note']) && $request['note']!='' ) {$updateData['note'] = $request['note'];}
+        if (isset($request['status']) && $request['status']!='' ) {$updateData['status'] = $request['status'];}
+        if (isset($request['reff']) && $request['reff']!='' ) {$updateData['reff'] = $request['reff'];}
+  
+
+        $nominal=0;
+        if (isset($request['total']) && $request['total']!='' ) {$nominal = $request['total'];}
+        try
+        {        
+            if($nominal!=0)
+            {
+                $idKaryawan = ''; $reff =''; $tenor=0;
+                if (isset($request['tenor']) && $request['tenor']!='' ) {$tenor = $request['tenor'];}
+                if (isset($request['id_karyawan']) && $request['id_karyawan']!='' ) {$idKaryawan = $request['id_karyawan'];}
+                if (isset($request['reff']) && $request['reff']!='' ) {$reff = $request['reff'];}
+                $nominalAngsuran=0;
+         
+                $nominalAngsuran = $nominal/$tenor;
+                DB::table('karyawan_hutang_perusahaan_detail')->where('id_hutang','=',$idHutang)->delete();
+                for($i = 1; $i <= $tenor; $i++) {
+                    // insert Detail
+                    $data = new karyawan_hutang_perusahaan_detail();
+                    $data->id_hutang = $idHutang;
+                    $data->id_karyawan = $idKaryawan;
+                    $data->angsuran_ke = $i;
+                    $data->nominal = $nominalAngsuran;
+                    $data->status_bayar = '0';
+                    $data->reff = $reff;
+                    $data->save();
+                }
+
+                // update variable master karyawan group sub variable
+                DB::table('karyawan_group_sub_variable')
+                ->where('id_karyawan','=',$idKaryawan)
+                ->where('id_variable','VR-009')
+                ->update([
+                    'nominal' => $nominalAngsuran,
+                ]);
+            }
+
+            DB::table('karyawan_hutang_perusahaan')
+            ->where('id','=',$id)
+            ->update($updateData);
+
+            // cek apakah ada periode berjalan
+            $classPenggajian = new c_classPenggajian;
+            $resultIDPeriode = $classPenggajian->getPeriodeBerjalan();
+
+            if( is_null($resultIDPeriode))
+            {
+                // nothing
+            }
+            else
+            {
+                // update gaji karyawan sub variable
+                DB::table('gaji_karyawan_sub_variable')
+                ->where('id_periode','=',$resultIDPeriode->idPeriode)
+                ->where('id_karyawan','=',$idKaryawan)
+                ->where('id_variable','VR-009')
+                ->update([
+                    'nominal' => $nominalAngsuran,
+                ]);
+            }
+
+            return 'success';
+          } catch (\Exception $ex) {         
+            // insert history
+            $_keterangan = 'Error--insertHutangPerusahaanKaryawan--'.$ex;
+                   
+            $_requestValue['tipe'] = 0;
+            $_requestValue['menu'] ='Karyawan';
+            $_requestValue['module'] = 'Class Karyawan';
+            $_requestValue['keterangan'] = $_keterangan;
+            $_requestValue['pic'] = 'system';
+
+            $c_class = new c_classHistory;
+            $c_class = $c_class->insertHistory($_requestValue);  
+            return response()->json($ex);
+          }
+    }
+
+    public function pelunasanHutangPerusahaanKaryawan($request)
+    {
+        $idHutang = $request['id_hutang'];
+    
+        try
+        {  
+            // get data 
+            $dtHutang = DB::table('karyawan_hutang_perusahaan')
+            ->select('id_karyawan')
+            ->where('id_hutang','=',$idHutang)
+            ->first();
+     
+            // update master karyawan hutang perusahaan
+            DB::table('karyawan_hutang_perusahaan')
+            ->where('id_hutang', $idHutang)
+            ->update(['status' => 1]);
+       
+            DB::table('karyawan_group_sub_variable')
+            ->where('id_karyawan', $dtHutang->id_karyawan)
+            ->where('id_variable', 'VR-009')
+            ->update(['nominal' => 0]);
+      
+            return 'success';
+          } catch (\Exception $ex) {         
+            // insert history
+            $_keterangan = 'Error--pelunasanHutangPerusahaanKaryawan--'.$ex;
+                   
+            $_requestValue['tipe'] = 0;
+            $_requestValue['menu'] ='Karyawan';
+            $_requestValue['module'] = 'Class Karyawan';
+            $_requestValue['keterangan'] = $_keterangan;
+            $_requestValue['pic'] = 'system';
+
+            $c_class = new c_classHistory;
+            $c_class = $c_class->insertHistory($_requestValue);  
+            return response()->json($ex);
+          }
+    }
 
 }

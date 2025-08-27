@@ -16,6 +16,9 @@ use App\kehadiran_absensi;
 use App\Http\Controllers\c_classRumus;
 use App\Http\Controllers\c_classHistory;
 
+use Carbon\Carbon;
+use Carbon\CarbonPeriod;
+
 class c_penggajian_absensi extends Controller
 {
     public function index() {
@@ -121,7 +124,7 @@ class c_penggajian_absensi extends Controller
             'departemen.departemen as departemen',
             'departemen_sub.sub_departemen as subDepartemen',
             'users.pos as pos',
-            'users.grade as grade',
+            'grade.level as grade',
             'kehadiran_absensi.id_karyawan as nik',
             'users.name as name',
             'users.tipe_kontrak as tipeKontrak',
@@ -140,6 +143,7 @@ class c_penggajian_absensi extends Controller
             ->join('users','users.id_absen','=','kehadiran_absensi.id_karyawan')
             ->join('departemen','departemen.id_dept','=','kehadiran_absensi.id_departemen')
             ->join('departemen_sub','departemen_sub.id_subDepartemen','=','kehadiran_absensi.id_sub_departemen')
+            ->join('grade','grade.id_grade','users.grade')
             ->where('kehadiran_absensi.id_periode',$periode->idPeriode)
             ->orderBy('kehadiran_absensi.id_karyawan','asc')
             ->get();
@@ -168,7 +172,7 @@ class c_penggajian_absensi extends Controller
             'departemen.departemen as departemen',
             'departemen_sub.sub_departemen as subDepartemen',
             'users.pos as pos',
-            'users.grade as grade',
+            'grade.level as grade',
             'gaji_kehadiran_absensi.id_karyawan as nik',
             'users.name as name',
             'users.tipe_kontrak as tipeKontrak',
@@ -191,6 +195,7 @@ class c_penggajian_absensi extends Controller
             ->join('departemen','departemen.id_dept','=','gaji_karyawan.id_departemen')
             ->join('departemen_sub','departemen_sub.id_subDepartemen','=','gaji_karyawan.id_departemen_sub')
             ->join('skema_hari_kerja','skema_hari_kerja.id_skema','gaji_karyawan.id_skema_hari_kerja')
+            ->join('grade','grade.id_grade','users.grade')
             ->where('gaji_kehadiran_absensi.id_periode',$periode->idPeriode)
             ->where('gaji_karyawan.id_periode',$periode->idPeriode)
             ->orderBy('gaji_kehadiran_absensi.id_karyawan','asc')
@@ -199,294 +204,313 @@ class c_penggajian_absensi extends Controller
         return json_encode($data);
     }
 
-    public function submit(Request $request) {
-            $userLogin = request()->session()->get('username');
-    
-            try {
-                DB::beginTransaction();
-               // get ID Periode
-                $c_classPenggajian = new c_classPenggajian;
-                $_val = $c_classPenggajian->getPeriodeBerjalan(); 
-                if( is_null($_val))
-                {
-                // nothing
+    // public function submit(Request $request) {
+    //     $userLogin = request()->session()->get('username');
+
+    //     try {
+    //         DB::beginTransaction();
+
+    //         $c_classPenggajian = new c_classPenggajian;
+    //         $_val = $c_classPenggajian->getPeriodeBerjalan();
+
+    //         if (is_null($_val)) {
+    //             // nothing
+    //         } else {
+    //             $periode = $_val;
+    //             $idPeriode = $periode->idPeriode;
+    //         }
+
+    //         $dtKaryawanListGaji = DB::table('gaji_karyawan')
+    //             ->select('gaji_karyawan.id_karyawan as idKaryawan',
+    //                 'skema_hari_kerja.jml_hari as jmlHari',
+    //                 'gaji_karyawan.skema_gaji as skemaGaji',
+    //                 'users.masa_kerja as masaKerja',
+    //                 'users.doj as doj')
+    //             ->join('skema_hari_kerja', 'skema_hari_kerja.id_skema', 'gaji_karyawan.id_skema_hari_kerja')
+    //             ->join('users', 'users.id_absen', '=', 'gaji_karyawan.id_karyawan')
+    //             ->where('gaji_karyawan.id_periode', $idPeriode)
+    //             ->get();
+
+    //         foreach ($dtKaryawanListGaji as $x) {
+    //             $_idKaryawan = $x->idKaryawan;
+    //             $_upahHarian = $c_classPenggajian->hitungGajiHarianKaryawan($x->idKaryawan, $x->jmlHari, $idPeriode);
+
+    //             $_dtAbsensiHarian = DB::table('kehadiran_absensi')
+    //                 ->select('kehadiran_absensi.id_karyawan as idKaryawan',
+    //                     'kehadiran_absensi.tot_hari as tot_hari',
+    //                     'kehadiran_absensi.tot_libur as tot_libur',
+    //                     'kehadiran_absensi.tot_ph as tot_ph',
+    //                     'kehadiran_absensi.tot_izin as tot_izin',
+    //                     'kehadiran_absensi.tot_alfa as tot_alfa',
+    //                     'kehadiran_absensi.tot_sakit as tot_sakit',
+    //                     'kehadiran_absensi.tot_cuti as tot_cuti',
+    //                     'kehadiran_absensi.tot_masuk as tot_masuk')
+    //                 ->where('kehadiran_absensi.id_periode', $idPeriode)
+    //                 ->where('kehadiran_absensi.id_karyawan', $x->idKaryawan);
+
+    //             if ($_dtAbsensiHarian->doesntExist()) {
+    //                 $_requestValue['tipe'] = 0;
+    //                 $_requestValue['menu'] = 'Penggajian';
+    //                 $_requestValue['module'] = 'Absensi Karyawan';
+    //                 $_requestValue['keterangan'] = 'Warning--ID Karyawan : ' . $x->idKaryawan . ' Tidak Mempunyai Kehadiran Absensi Periode : ' . $idPeriode;
+    //                 $_requestValue['pic'] = $userLogin;
+    //                 $c_class = new c_classHistory;
+    //                 $c_class->insertHistory($_requestValue);
+    //             } else {
+    //                 $dtAbsensiHarian = $_dtAbsensiHarian->first();
+    //                 DB::table('gaji_kehadiran_absensi')
+    //                     ->where('id_periode', $idPeriode)
+    //                     ->where('id_karyawan', $x->idKaryawan)
+    //                     ->delete();
+
+    //                 $gajiKehadiranAbsensi = new gaji_kehadiran_absensi();
+    //                 $gajiKehadiranAbsensi->id_periode = $idPeriode;
+    //                 $gajiKehadiranAbsensi->id_karyawan = $x->idKaryawan;
+    //                 $gajiKehadiranAbsensi->tot_hari = $dtAbsensiHarian->tot_hari;
+    //                 $gajiKehadiranAbsensi->upah_harian = $_upahHarian;
+    //                 $gajiKehadiranAbsensi->tot_libur = $dtAbsensiHarian->tot_libur;
+    //                 $gajiKehadiranAbsensi->tot_ph = $dtAbsensiHarian->tot_ph;
+    //                 $gajiKehadiranAbsensi->tot_izin = $dtAbsensiHarian->tot_izin;
+    //                 $gajiKehadiranAbsensi->tot_alfa = $dtAbsensiHarian->tot_alfa;
+    //                 $gajiKehadiranAbsensi->tot_sakit = $dtAbsensiHarian->tot_sakit;
+    //                 $gajiKehadiranAbsensi->tot_cuti = $dtAbsensiHarian->tot_cuti;
+    //                 $gajiKehadiranAbsensi->tot_masuk = $dtAbsensiHarian->tot_masuk;
+    //                 $gajiKehadiranAbsensi->reff = $userLogin;
+    //                 $gajiKehadiranAbsensi->save();
+
+    //                 // === Transport Calculation ===
+    //                 $_valTransport = $c_classPenggajian->getTunjanganTransport($x->idKaryawan);
+    //                 $_tnjTranposrt = 0;
+
+    //                 $doj = Carbon::parse($x->doj);
+    //                 $periodeAwal = Carbon::parse($periode->tgl_awal);
+    //                 $periodeEnd = Carbon::parse($periode->tgl_akhir);
+    //                 $anniversary2thn = $doj->copy()->addYears(2);
+
+    //                 if ($anniversary2thn->lte($periodeEnd)) {
+    //                     if ($doj->day === 15) {
+    //                         $maksTransport = $x->jmlHari == 25 ? 27 : ($x->jmlHari == 21 ? 23 : $x->jmlHari);
+    //                         $_tnjTranposrt = ($_valTransport->nominal) * floor($maksTransport / 2);
+    //                     } else {
+    //                         $startTransport = $anniversary2thn->lt($periodeAwal) ? $periodeAwal : $anniversary2thn;
+    //                         $totalHariDalamPeriode = $periodeEnd->diffInDays($periodeAwal) + 1;
+    //                         $lamaHariAktif = $periodeEnd->diffInDays($startTransport) + 1;
+    //                         $proporsiMasuk = 0;
+
+    //                         if ($dtAbsensiHarian->tot_masuk > 0 && $totalHariDalamPeriode > 0) {
+    //                             $proporsiMasuk = round(($dtAbsensiHarian->tot_masuk / $totalHariDalamPeriode) * $lamaHariAktif);
+    //                         }
+
+    //                         $maksTransport = $x->jmlHari == 25 ? 27 : ($x->jmlHari == 21 ? 23 : $x->jmlHari);
+    //                         $hariTransportFinal = min($proporsiMasuk, $maksTransport);
+    //                         $_tnjTranposrt = ($_valTransport->nominal) * $hariTransportFinal;
+    //                     }
+    //                 }
+
+    //                 DB::table('gaji_karyawan_sub_variable')
+    //                     ->where('id_periode', $idPeriode)
+    //                     ->where('id_karyawan', $x->idKaryawan)
+    //                     ->where('id_variable', 'VR-004')
+    //                     ->update(['nominal' => $_tnjTranposrt]);
+
+    //                 $_nominalAlfa = 0;
+    //                 $_nominalIjin = 0;
+
+    //                 if ($x->skemaGaji != '2') {
+    //                     // $_nominalAlfa = $dtAbsensiHarian->tot_alfa * $_upahHarian;
+    //                     // $_nominalIjin = $dtAbsensiHarian->tot_izin * $_upahHarian;
+    //                 }
+
+    //                 DB::table('gaji_karyawan_sub_variable')
+    //                     ->where('id_periode', $idPeriode)
+    //                     ->where('id_karyawan', $x->idKaryawan)
+    //                     ->where('id_variable', 'VR-010')
+    //                     ->update(['nominal' => $_nominalAlfa]);
+
+    //                 DB::table('gaji_karyawan_sub_variable')
+    //                     ->where('id_periode', $idPeriode)
+    //                     ->where('id_karyawan', $x->idKaryawan)
+    //                     ->where('id_variable', 'VR-011')
+    //                     ->update(['nominal' => $_nominalIjin]);
+    //             }
+    //         }
+
+    //         DB::table('gaji_periode_status')
+    //             ->where('id_periode', $idPeriode)
+    //             ->where('id_status_gaji', 'GG-003')
+    //             ->update(['status' => '1', 'reff' => $userLogin]);
+
+    //         DB::table('kehadiran_absensi')->where('id_periode', $idPeriode)->delete();
+
+    //         $c_classPenggajian = new c_penggajian_paycheck;
+    //         $c_classPenggajian->hitungThp();
+
+    //         DB::commit();
+    //         return 'success';
+    //     } catch (\Exception $ex) {
+    //         DB::rollBack();
+    //         return response()->json($ex);
+    //     }
+    // }
+
+    // akumulasi
+    public function submit(Request $request) 
+    {
+        $userLogin = request()->session()->get('username');
+   
+        try {
+            DB::beginTransaction();
+
+            // get ID Periode
+            $c_classPenggajian = new c_classPenggajian;
+            $_val = $c_classPenggajian->getPeriodeBerjalan(); 
+            if (is_null($_val)) {
+                return response()->json(['status' => false, 'message' => 'Periode belum tersedia']);
+            }
+
+            $periode = $_val;
+            $idPeriode = $periode->idPeriode;
+            $periodeStart = Carbon::parse($periode->tgl_awal);
+            $periodeEnd = Carbon::parse($periode->tgl_akhir);
+
+            // get kehadiran absensi
+            $dtKaryawanListGaji = DB::table('gaji_karyawan')
+                ->select('gaji_karyawan.id_karyawan as idKaryawan',
+                    'skema_hari_kerja.jml_hari as jmlHari',
+                    'gaji_karyawan.skema_gaji as skemaGaji',
+                    'users.masa_kerja as masaKerja',
+                    'users.doj as doj',
+                    'gaji_karyawan.nik as nik',)
+                ->join('skema_hari_kerja','skema_hari_kerja.id_skema','gaji_karyawan.id_skema_hari_kerja')
+                ->join('users','users.id_absen','=','gaji_karyawan.id_karyawan')
+                ->where('gaji_karyawan.id_periode',$idPeriode)
+                // ->where('gaji_karyawan.nik','=','02-0623-045')
+                ->get();
+          
+
+            foreach($dtKaryawanListGaji as $x) {
+                $_idKaryawan = $x->idKaryawan;
+
+                $_upahHarian = $c_classPenggajian->hitungGajiHarianKaryawan($x->idKaryawan, $x->jmlHari, $idPeriode);
+
+                $_dtAbsensiHarian = DB::table('kehadiran_absensi')
+                    ->select('id_karyawan', 'tot_hari', 'tot_libur', 'tot_ph', 'tot_izin', 'tot_alfa', 'tot_sakit', 'tot_cuti', 'tot_masuk')
+                    ->where('id_periode', $idPeriode)
+                    ->where('id_karyawan', $x->idKaryawan);
+
+                if ($_dtAbsensiHarian->doesntExist()) {
+                    $c_class = new c_classHistory;
+                    $c_class->insertHistory([
+                        'tipe' => 0,
+                        'menu' => 'Penggajian',
+                        'module' => 'Absensi Karyawan',
+                        'keterangan' => 'Warning--ID Karyawan : '.$x->idKaryawan .' Tidak Mempunyai Kehadiran Absensi Periode : '. $idPeriode,
+                        'pic' => $userLogin,
+                    ]);
+                    continue;
                 }
-                else
-                {
-                    // get Data Periode
-                    $periode = $_val;
-                    $idPeriode = $periode->idPeriode;
-                }
-                    // get kehadiran absensi
-                    $dtKaryawanListGaji = DB::table('gaji_karyawan')
-                    ->select('gaji_karyawan.id_karyawan as idKaryawan','skema_hari_kerja.jml_hari as jmlHari','gaji_karyawan.skema_gaji as skemaGaji')
-                    ->join('skema_hari_kerja','skema_hari_kerja.id_skema','gaji_karyawan.id_skema_hari_kerja')
-                    ->where('gaji_karyawan.id_periode',$idPeriode)
-                    ->get();
-                
-              
-                    foreach($dtKaryawanListGaji as $x)
-                    {
-                            $_idKaryawan=$x->idKaryawan;
 
-                            // get rumus Harian =  (GAJI POKOK + TUNJ TETAP) / Skema hari kerja (21 atau 25)
-                            $c_classPenggajian = new c_classPenggajian;
-
-                            $_upahHarian = $c_classPenggajian->hitungGajiHarianKaryawan($x->idKaryawan,$x->jmlHari, $idPeriode);
-                        
-
-                            // get absensi
-                            $_dtAbsensiHarian = DB::table('kehadiran_absensi')
-                            ->select(
-                            'kehadiran_absensi.id_karyawan as idKaryawan',
-                            'kehadiran_absensi.tot_hari as tot_hari',
-                            'kehadiran_absensi.tot_libur as tot_libur',
-                            'kehadiran_absensi.tot_ph as tot_ph',
-                            'kehadiran_absensi.tot_izin as tot_izin',
-                            'kehadiran_absensi.tot_alfa as tot_alfa',
-                            'kehadiran_absensi.tot_sakit as tot_sakit',
-                            'kehadiran_absensi.tot_cuti as tot_cuti',
-                            'kehadiran_absensi.tot_masuk as tot_masuk')
-                            ->where('kehadiran_absensi.id_periode',$idPeriode)
-                            ->where('kehadiran_absensi.id_karyawan',$x->idKaryawan);
-                     
-                            if ($_dtAbsensiHarian->doesntExist()) 
-                            {
-                                // dd('ID Karyawan : '. $x->idKaryawan .' Tidak Mempunyai Kehadiran Absensi Periode : '. $idPeriode);
-                                // insert history
-                                $_keterangan = 'Warning--ID Karyawan : '.$x->idKaryawan .' Tidak Mempunyai Kehadiran Absensi Periode : '. $idPeriode;
-                        
-                                $_requestValue['tipe'] = 0;
-                                $_requestValue['menu'] ='Penggajian';
-                                $_requestValue['module'] = 'Absensi Karyawan';
-                                $_requestValue['keterangan'] = $_keterangan;
-                                $_requestValue['pic'] = $userLogin;
-
-                                $c_class = new c_classHistory;
-                                $c_class = $c_class->insertHistory($_requestValue);                                                                                   
-                            }
-                            else
-                            {
-                              
-                                $dtAbsensiHarian =  $_dtAbsensiHarian->first();
-                                $dataListPeriodeJadwal = DB::table('gaji_kehadiran_absensi')
-                                ->select('id')
-                                ->where('id_periode',$idPeriode)
-                                ->where('id_karyawan',$x->idKaryawan);
-                          
-                                if ($dataListPeriodeJadwal->doesntExist()) {  
-                        
-                                    $gajiKehadiranAbsensi = new gaji_kehadiran_absensi();
-                                    $gajiKehadiranAbsensi->id_periode = $idPeriode;
-                                    $gajiKehadiranAbsensi->id_karyawan = $x->idKaryawan;
-                                  
-                                    $gajiKehadiranAbsensi->tot_hari = $dtAbsensiHarian->tot_hari;
-                                  
-                                    $gajiKehadiranAbsensi->upah_harian = $_upahHarian;
-                                    $gajiKehadiranAbsensi->tot_libur = $dtAbsensiHarian->tot_libur;
-                                    $gajiKehadiranAbsensi->tot_ph = $dtAbsensiHarian->tot_ph;
-                                    $gajiKehadiranAbsensi->tot_izin = $dtAbsensiHarian->tot_izin;
-                                    $gajiKehadiranAbsensi->tot_alfa = $dtAbsensiHarian->tot_alfa;
-                                    $gajiKehadiranAbsensi->tot_sakit = $dtAbsensiHarian->tot_sakit;
-                                    $gajiKehadiranAbsensi->tot_cuti = $dtAbsensiHarian->tot_cuti;
-                                    $gajiKehadiranAbsensi->tot_masuk = $dtAbsensiHarian->tot_masuk;
-                                    $gajiKehadiranAbsensi->reff = $userLogin;
-                                    $gajiKehadiranAbsensi->save();
-                              
-                                }
-                                else
-                                {
-                                    DB::table('gaji_kehadiran_absensi')
-                                    ->where('id_periode',$idPeriode)
-                                    ->where('id_karyawan',$x->idKaryawan)
-                                    ->delete();
-                                    
-                                    $gajiKehadiranAbsensi = new gaji_kehadiran_absensi();
-                                    $gajiKehadiranAbsensi->id_periode = $idPeriode;
-                                    $gajiKehadiranAbsensi->id_karyawan = $x->idKaryawan;
-                                    $gajiKehadiranAbsensi->tot_hari = $dtAbsensiHarian->tot_hari;
-        
-                                    $gajiKehadiranAbsensi->upah_harian = $_upahHarian;
-                                    $gajiKehadiranAbsensi->tot_libur = $dtAbsensiHarian->tot_libur;
-                                    $gajiKehadiranAbsensi->tot_ph = $dtAbsensiHarian->tot_ph;
-                                    $gajiKehadiranAbsensi->tot_izin = $dtAbsensiHarian->tot_izin;
-                                    $gajiKehadiranAbsensi->tot_alfa = $dtAbsensiHarian->tot_alfa;
-                                    $gajiKehadiranAbsensi->tot_sakit = $dtAbsensiHarian->tot_sakit;
-                                    $gajiKehadiranAbsensi->tot_cuti = $dtAbsensiHarian->tot_cuti;
-                                    $gajiKehadiranAbsensi->tot_masuk = $dtAbsensiHarian->tot_masuk;
-                                    $gajiKehadiranAbsensi->reff = $userLogin;
-                                    $gajiKehadiranAbsensi->save();
-                                }
-                            // get nominal Tunjangan Transport 
-                            $c_classPenggajian = new c_classPenggajian;
-                          
-                            $_val = $c_classPenggajian->getTunjanganTransport($x->idKaryawan); 
-                            $_valTransport = $_val;
-                     
-                            $_tnjTranposrt=0;
-
-                            // cek skema 5-1 & 6-61
-                            if($x->jmlHari =='25')
-                            {
-                                // set maksimal 26 hari
-                                if($dtAbsensiHarian->tot_masuk > $x->jmlHari)
-                                {
-                                    $_tnjTranposrt= ($_valTransport->nominal) * ($x->jmlHari+1);
-                                }
-                                else
-                                {
-                                    $_tnjTranposrt= ($_valTransport->nominal) * $dtAbsensiHarian->tot_masuk;
-                                }
-                            }
-                            elseif($x->jmlHari =='21')
-                            {
-                                // set maksimal 21 hari
-                                if($dtAbsensiHarian->tot_masuk > $x->jmlHari)
-                                {
-                                    $_tnjTranposrt= ($_valTransport->nominal) * ($x->jmlHari);
-                                }
-                                else
-                                {
-                                    $_tnjTranposrt= ($_valTransport->nominal) * $dtAbsensiHarian->tot_masuk;
-                                }
-                            }
-                        
-                            
-                           
-                            // update Tunjangan Transport & Alfa/ Ijin
-                             DB::table('gaji_karyawan_sub_variable')
-                            ->where('id_periode',$idPeriode)
-                            ->where('id_karyawan',$x->idKaryawan)
-                            // code variable tunjangan Transport VR-004
-                            ->where('id_variable','VR-004')
-                            ->update([
-                                       'nominal' => $_tnjTranposrt,
-                            ]);
-
-                            // Cek Skema Gaji (Harian = 2)
-                            if($x->skemaGaji=='2')
-                            {
-                                // nothing
-                                $_nominalAlfa =0;
-                                $_nominalIjin =0;
-                            }
-                            else
-                            {
-                                // update  Alfa
-                                $_nominalAlfa =0;
-                                // $_nominalAlfa=$dtAbsensiHarian->tot_alfa*$_upahHarian; // request karyawan alfa tidak dipotong
-
-                                // update  Ijin
-                                $_nominalIjin =0;
-                                // $_nominalIjin=$dtAbsensiHarian->tot_izin*$_upahHarian; // request karyawan ijin tidak dipotong
-                            }
-                              DB::table('gaji_karyawan_sub_variable')
-                              ->where('id_periode',$idPeriode)
-                              ->where('id_karyawan',$x->idKaryawan)
-                              // code variable tunjangan Transport VR-010
-                              ->where('id_variable','VR-010')
-                              ->update([
-                                      'nominal' => $_nominalAlfa,
-                              ]);
-                              
-                              DB::table('gaji_karyawan_sub_variable')
-                              ->where('id_periode',$idPeriode)
-                              ->where('id_karyawan',$x->idKaryawan)
-                              // code variable tunjangan Transport VR-011
-                              ->where('id_variable','VR-011')
-                              ->update([
-                                      'nominal' => $_nominalIjin,
-                              ]);
-                        }
-                            
-                    }
-
-                    // update Status Periode gaji
-                        DB::table('gaji_periode_status')
-                        ->where('id_periode',$idPeriode)
-                        ->where('id_status_gaji','GG-003')
-                        ->update([
-                            'status' => '1',
-                            'reff' => $userLogin,
-                        ]);
-
-                    DB::table('kehadiran_absensi')
-                    ->where('id_periode',$idPeriode)
+                $dtAbsensiHarian = $_dtAbsensiHarian->first();
+         
+                DB::table('gaji_kehadiran_absensi')
+                    ->where('id_periode', $idPeriode)
+                    ->where('id_karyawan', $x->idKaryawan)
                     ->delete();
 
-                    $c_classPenggajian = new c_penggajian_paycheck;
-                    $c_classPenggajian = $c_classPenggajian->hitungThp();
+                gaji_kehadiran_absensi::create([
+                    'id_periode' => $idPeriode,
+                    'id_karyawan' => $x->idKaryawan,
+                    'tot_hari' => $dtAbsensiHarian->tot_hari,
+                    'upah_harian' => $_upahHarian,
+                    'tot_libur' => $dtAbsensiHarian->tot_libur,
+                    'tot_ph' => $dtAbsensiHarian->tot_ph,
+                    'tot_izin' => $dtAbsensiHarian->tot_izin,
+                    'tot_alfa' => $dtAbsensiHarian->tot_alfa,
+                    'tot_sakit' => $dtAbsensiHarian->tot_sakit,
+                    'tot_cuti' => $dtAbsensiHarian->tot_cuti,
+                    'tot_masuk' => $dtAbsensiHarian->tot_masuk,
+                    'reff' => $userLogin,
+                ]);
 
-                DB::commit();
-          
-                return 'success';
-            } catch (\Exception $ex) {
-                DB::rollBack();
-                return response()->json($ex);
-            }
-        }
-        // Action Data -----------------------------------
-        public function actionData(Request $request) {
-            $userLogin = request()->session()->get('username');
-            $typeActionData = $request->typeActionData;
-            $idData = $request->idData;
-   
-            try {
-                DB::beginTransaction();  
-                // get ID Periode
-                $c_classPenggajian = new c_classPenggajian;
-                $_val = $c_classPenggajian->getPeriodeBerjalan(); 
-                if( is_null($_val))
-                {
-                // nothing
-                }
-                else
-                {
-                    // get Data Periode
-                    $periode = $_val;
+                // Transport
+                $_valTransport = $c_classPenggajian->getTunjanganTransport($x->idKaryawan);
+                $_tnjTranposrt = 0;
+               
+                $doj = Carbon::parse($x->doj);
+                $anniversary = $doj->copy()->addYears(2);
+             
+                if($x->masaKerja ==25)
+                {   
+                    $response = Http::get('https://lokahr.salokapark.app/api/get_jadwal_berangkat', [
+                        'id_periode'   => $idPeriode,
+                        'id_karyawan'  => $x->nik,
+                        'date_of_join' => $x->doj,
+                    ]);
 
-                    $_totData = DB::table('kehadiran_absensi')
-                    ->select(DB::raw('COUNT(id) as totData'));
-
-                    if($typeActionData=='removeAll')
-                    {
-                        $_totData->where('id_periode',$periode->idPeriode);
-                        $totData = $_totData->first();
-
-                        DB::table('kehadiran_absensi')
-                        ->where('id_periode',$periode->idPeriode)
-                        ->delete();
-                        $_keterangan = 'Action-Remove All Data Absensi ID Periode : ' . $periode->idPeriode . ' ('.$periode->periode.') Total Data Absensi Karyawan : '. $totData->totData;
-                    }
-                    elseif($typeActionData=='removeCheckBox')
-                    {
-            
-                        // $_totData->where('id_periode',$periode->idPeriode);
-                        $_totData->whereIn('id',$idData);
-                        $totData = $_totData->first();
-
-                        DB::table('kehadiran_absensi')
-                        // ->where('id_periode',$periode->idPeriode)
-                        ->whereIn('id',$idData)
-                        ->delete();
-                        $_keterangan = 'Action-Remove CheckBox Data Absensi ID Periode : ' . $periode->idPeriode . ' ('.$periode->periode.') Total Data Absensi Karyawan : '. $totData->totData .' ID : {'. $idData.'}';
-                    }
-                    // insert history
+                    $jsonData = $response->json();
+                
+                    $totalHariMasuk=0;
+                    $hariMasukProporsional =$jsonData['data']['total'] ;
                    
-                    $_requestValue['tipe'] = 0;
-                    $_requestValue['menu'] ='Penggajian';
-                    $_requestValue['module'] = 'Absensi Karyawan';
-                    $_requestValue['keterangan'] = $_keterangan;
-                    $_requestValue['pic'] = $userLogin;
-           
-                    $c_class = new c_classHistory;
-                    $c_class = $c_class->insertHistory($_requestValue);
+                    $maxHariTransport = $x->jmlHari == 25 ? 27 : ($x->jmlHari == 21 ? 23 : $x->jmlHari);
+                    $_tnjTranposrt = min($hariMasukProporsional, $maxHariTransport) * $_valTransport->nominal;
                 }
-                DB::commit();
-                return 'success';
-            } catch (\Exception $ex) {
-                DB::rollBack();
-                return json_encode([$ex]);
+                if($x->masaKerja > 25)
+                {
+                    $maxHariTransport = $x->jmlHari == 25 ? 27 : ($x->jmlHari == 21 ? 23 : $x->jmlHari);
+                    $_tnjTranposrt = min($dtAbsensiHarian->tot_masuk, $maxHariTransport) * $_valTransport->nominal;
+                }
+
+                DB::table('gaji_karyawan_sub_variable')
+                    ->where('id_periode', $idPeriode)
+                    ->where('id_karyawan', $x->idKaryawan)
+                    ->where('id_variable', 'VR-004')
+                    ->update(['nominal' => $_tnjTranposrt]);
+
+                $_nominalAlfa = 0;
+                $_nominalIjin = 0;
+
+                if ($x->skemaGaji != '2') {
+                    // uncomment jika ingin hitung potongan
+                    // $_nominalAlfa = $dtAbsensiHarian->tot_alfa * $_upahHarian;
+                    // $_nominalIjin = $dtAbsensiHarian->tot_izin * $_upahHarian;
+                }
+
+                DB::table('gaji_karyawan_sub_variable')
+                    ->where('id_periode', $idPeriode)
+                    ->where('id_karyawan', $x->idKaryawan)
+                    ->where('id_variable', 'VR-010')
+                    ->update(['nominal' => $_nominalAlfa]);
+
+                DB::table('gaji_karyawan_sub_variable')
+                    ->where('id_periode', $idPeriode)
+                    ->where('id_karyawan', $x->idKaryawan)
+                    ->where('id_variable', 'VR-011')
+                    ->update(['nominal' => $_nominalIjin]);
             }
+
+            DB::table('gaji_periode_status')
+                ->where('id_periode', $idPeriode)
+                ->where('id_status_gaji', 'GG-003')
+                ->update([
+                    'status' => '1',
+                    'reff' => $userLogin,
+                ]);
+
+            DB::table('kehadiran_absensi')
+                ->where('id_periode', $idPeriode)
+                ->delete();
+
+            $c_classPenggajian = new c_penggajian_paycheck;
+            $c_classPenggajian->hitungThp();
+
+            DB::commit();
+            return 'success';
+
+        } catch (\Exception $ex) {
+            dd($ex);
+            DB::rollBack();
+            return response()->json($ex);
         }
+    }
 }

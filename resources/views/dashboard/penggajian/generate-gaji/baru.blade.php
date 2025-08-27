@@ -24,10 +24,10 @@
                             </div>
                             <div class="card-footer">
 
-                            <button type="button" class="btn btn-block btn-outline-primary" onclick="window.location = '{{ url($v->url) }}'">
+                            <!-- <button type="button" class="btn btn-block btn-outline-primary" onclick="window.location = '{{ url($v->url) }}'">
                            
                                         <i class="fas fa-arrow-right mr-2"></i>Go Module
-                            </button>
+                            </button> -->
                              <p class="card-text"><small class="text-muted">Last updated {{$v->updatedAt}}</small></p>
                              <p class="card-text">PIC : {{$v->reff}}</p>
                             </div>

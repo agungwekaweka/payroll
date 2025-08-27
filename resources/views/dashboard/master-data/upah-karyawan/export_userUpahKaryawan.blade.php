@@ -3,7 +3,6 @@
         <thead>
         <tr class="text-center">
             <th >No</th>
-        
             <th >ID DEPARTEMEN</th>
             <th >ID DEPARTEMEN SUB</th>
             <th >POS</th>
@@ -16,17 +15,14 @@
             <th >TIPE KONTRAK</th>
             <th >NO REKENING</th>
             <th >TIPE BPJS</th>
-            <th >STATUS KARYAWAN</th>
             <th >TIPE PENGGAJIAN</th>
         </tr>
         </thead>
-      
         <tbody>
 
         @php($i=1)
         @php($ii=1)
         @foreach($karyawan as $d)
-  
             <tr>
                 <td>{{ $i }}</td>
                 <td>{{ $d->departemen }}</td>
@@ -41,15 +37,9 @@
                 <td bgcolor="#d9ead3" >{{ $d->tipeKontrak }}</td>
                 <td bgcolor="#d9ead3" >{{ $d->noRekening }}</td>
                 <td bgcolor="#d9ead3" >{{ $d->tipeBpjs }}</td>             
-                <td bgcolor="#d9ead3" >{{ $d->statusSkemaGaji }}</td>
                 <td bgcolor="#d9ead3" >{{ $d->skema_gaji }}</td>
             </tr>
-     
-        @php($i++) 
-             
+        @php($i++)           
         @endforeach
-
-        </tbody>
-
-       
+        </tbody>  
     </table>

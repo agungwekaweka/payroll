@@ -8,7 +8,6 @@
                 <div class="card-header">
                         <h4>Penggajian - Data Lembur</h4>
                     </div>
-          
 
                     <div class="card-body">
                     <table id="listTable" class="table table-striped table-bordered display nowrap" style="width: 100%">

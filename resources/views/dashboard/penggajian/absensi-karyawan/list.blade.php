@@ -121,8 +121,6 @@
                     {data: 'totSakit'},
                     {data: 'reff'},
                     {data: 'updatedAt'},
-                  
-                
                 ],
             });
             $('#listTable tbody').on('click','tr',function () {

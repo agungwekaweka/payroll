@@ -17,7 +17,7 @@ use Carbon\Carbon;
 
 class c_classPenggajian extends Controller
 {
-    ///////-------------------------------///////// Master Karyawan Periode
+    // Master Karyawan Periode
     // Add Data Karyawan Periode Penggajian
     public function addKaryawanMasterPeriode($_idPeriode,$_idKaryawan,$_pic)
     {
@@ -226,85 +226,6 @@ class c_classPenggajian extends Controller
         }                  
     }
 
-    // update Variable BPJS Karyawan Master
-    // public function updateVariableBPJSKaryawanMaster($_idKaryawan, $_tipeBpjs)
-    // {
-    //     try
-    //     {
-    //         DB::beginTransaction();
-    //             // delete group_sub_variable
-    //             DB::table('karyawan_group_sub_variable_bpjs')->where('id_karyawan','=',$_idKaryawan)->delete();
-        
-    //             // get variable bpjs
-    //             $varBpjs = DB::table('grouping_sub_variable_bpjs')
-    //             ->select('id_variable_bpjs as idVariableBpjs','id_bpjs as idBpjs',
-    //             'bpjs as bpjs','id_variable as idVariable','variable as variable','tipe_potongan as tipePotongan','tot_presentase as totPresentase',
-    //             'presentase as presentase','max_value as maxValue','max_value_nominal as maxValueNominal','nominal as nominal'
-    //             )
-    //             ->where('tipe_potongan','=',$_tipeBpjs)
-    //             ->where('isDell','=', '1')
-    //             ->get();
-        
-    //             $_nominal=0;
-    //             // get rumus (UPAH TETAP) code GS-001
-    //             $c_classRumus = new c_classRumus;
-    //             $_nominal = $c_classRumus->getRumus('GS-001',$_idKaryawan); 
-        
-    //             foreach($varBpjs as $x)
-    //             {
-    //                     $karGroupSubVarBpjs = new karyawan_group_sub_variable_bpjs();
-    //                     $karGroupSubVarBpjs->id_karyawan = $_idKaryawan;
-    //                     $karGroupSubVarBpjs->id_variable_bpjs = $x->idVariableBpjs; 
-    //                     $karGroupSubVarBpjs->id_variable = $x->idVariable; 
-    //                     $karGroupSubVarBpjs->variable = $x->variable; 
-    //                     $karGroupSubVarBpjs->tipe_potongan = $x->tipePotongan; 
-                    
-    //                     $karGroupSubVarBpjs->tot_presentase = $x->totPresentase; 
-    //                     $karGroupSubVarBpjs->presentasi = $x->presentase; 
-    //                     $karGroupSubVarBpjs->max_value = $x->maxValue; 
-    //                     $karGroupSubVarBpjs->max_value_nominal = $x->maxValueNominal; 
-    //                     // nominal upah tetap
-    //                     $karGroupSubVarBpjs->nominal = $_nominal; 
-    //                     $karGroupSubVarBpjs->save();
-                      
-    //                     // nominal bpjs
-    //                     $_val_bpjs=0;
-    //                     if($_nominal > $x->maxValue)
-    //                     {
-    //                         $_val_bpjs=$x->maxValueNominal;
-    //                     }
-    //                     else
-    //                     {
-    //                         $_val_bpjs = ($_nominal*($x->presentase/100));
-    //                     }
-                        
-    //                     // master karyawan group sub variable 
-    //                     DB::table('karyawan_group_sub_variable')
-    //                     ->where('id_karyawan','=',$_idKaryawan)
-    //                     ->where('id_variable','=',$x->idVariable)
-    //                     ->update([
-    //                         'nominal' => $_val_bpjs
-    //                     ]);
-    //             }
-
-    //             DB::commit();
-    //             return 'success';
-    //         } catch (\Exception $ex) {
-    //             DB::rollBack();
-    //             // insert history
-    //             $_keterangan = 'Error--updateVariableBPJSKaryawanMaster--'.$ex;
-    //             $_requestValue['tipe'] = 0;
-    //             $_requestValue['menu'] ='Penggajian';
-    //             $_requestValue['module'] = 'Class Penggajian';
-    //             $_requestValue['keterangan'] = $_keterangan;
-    //             $_requestValue['pic'] = '-';
-
-    //             $c_class = new c_classHistory;
-    //             $c_class = $c_class->insertHistory($_requestValue);  
-    //         return response()->json($ex);
-    //     }                  
-    // }
-
     // update Data Bpsj Karyawan Periode
     // -->> update juga Variable BPJS Karyawan Periode
     public function updateBpjsKaryawanPeriode($_idPeriode,$_idKaryawan,$_tipeBpjs)
@@ -376,7 +297,23 @@ class c_classPenggajian extends Controller
                 $_nominal=0;
                 // get rumus (UPAH TETAP) code GS-001
                 $c_classRumus = new c_classRumus;
-                $_nominal = $c_classRumus->getRumusPenggajianPeriode('GS-001',$_idKaryawan,$_idPeriode); 
+                // $_nominal = $c_classRumus->getRumusPenggajianPeriode('GS-001',$_idKaryawan,$_idPeriode); 
+                $_nominal = $c_classRumus->getRumus('GS-001',$_idKaryawan); 
+                     
+                // get tipe gaji
+                $tipeGaji='';
+                $_tipeGaji = DB::table('gaji_karyawan')
+                ->select('skema_gaji')
+                ->where('id_periode',$_idPeriode)
+                ->first();
+                $tipeGaji = $_tipeGaji->skema_gaji;
+
+                if($tipeGaji!='1')
+                {
+                    // get rumus (UPAH TETAP) code GS-001
+                    $c_classRumus = new c_classRumus;
+                    $_nominal = $c_classRumus->getRumus('GS-001',$_idKaryawan,$_idPeriode); 
+                }
             
                 foreach($varBpjs as $x)
                 {
@@ -493,11 +430,13 @@ class c_classPenggajian extends Controller
          }                  
      }
 
-    // update Grade Transport Master Karyawan
+    // update Grade  Master Karyawan (Tunjangan Transport & Jabatan)
     public function updateTunjanganTransport($idKaryawan)
     {
         $_dataUser = DB::table('users')
-        ->select('users.id_absen as idAbsen','users.name as name','users.doj as doj','grade.nominal_tnj_transport as nominalTnjTransport','grade.interval_bln as intervalBln')
+        ->select('users.id_absen as idAbsen','users.name as name','users.doj as doj',
+        'grade.nominal_tnj_transport as nominalTnjTransport','grade.interval_bln as intervalBln',
+        'grade.nominal_tnj_jabatan as nominalTnjJabatan','grade.interval_bln_jabatan as intervalBlnJabatan')
         ->join('grade','grade.id_grade','users.grade')
         ->where('users.id_absen',$idKaryawan)
         ->first();
@@ -512,9 +451,18 @@ class c_classPenggajian extends Controller
              {
                 DB::table('karyawan_group_sub_variable')
                 ->where('id_karyawan','=',$idKaryawan)
-                ->where('id_variable','=','VR-004')
+                ->where('id_variable','=','VR-004') // Tunjangan Transport Atau Kehadiran
                 ->update([
                     'nominal' => $_dataUser->nominalTnjTransport
+                ]);
+             }
+             if($_masaKerja >= $_dataUser->intervalBlnJabatan)
+             {
+                DB::table('karyawan_group_sub_variable')
+                ->where('id_karyawan','=',$idKaryawan)
+                ->where('id_variable','=','VR-002') // Tunjangan Jabatan
+                ->update([
+                    'nominal' => $_dataUser->nominalTnjJabatan
                 ]);
              }
     
@@ -534,7 +482,6 @@ class c_classPenggajian extends Controller
              return response()->json($ex);
          }                  
     }
-
 
     ///////-------------------------------///////// GAJI
     // get ID Periode
@@ -565,9 +512,9 @@ class c_classPenggajian extends Controller
         }
     }
 
-      // get ID Last Periode
-      public function getLastPeriode()
-      {
+    // get ID Last Periode
+    public function getLastPeriode()
+    {
           try
           {
               $dtPeriode = DB::table('gaji_periode')
@@ -587,7 +534,7 @@ class c_classPenggajian extends Controller
               DB::rollBack();
               return response()->json($ex);
           }
-      }
+    }
 
     // calculate Tunjangan Transport 
     public function getTunjanganTransport($idKaryawan)
@@ -640,25 +587,36 @@ class c_classPenggajian extends Controller
             // get rumus (Total Upah) code GS-001
             $_totalUpah=0;
             $c_classRumus = new c_classRumus;
-            $_totalUpah = $c_classRumus->getRumus('GS-001',$_idKaryawan); 
-       
-
+            $_totalUpah = $c_classRumus->getRumusPenggajianPeriode('GS-001',$_idKaryawan, $idPeriode); 
+         
             $_nominalLembur=0;
             $_batasNominalLembur=0;
             $_batasNominalLembur = $this->getNominalLembur();
-            if($_totalUpah < $_batasNominalLembur || $_totalUpah == $_batasNominalLembur)
+            // cek apakah mempunyai tunjangan jabatan VR-002
+            $_tunjanganJabatan = 0;
+            $karyawanSubVariableGaji = DB::table('gaji_karyawan_sub_variable')
+            ->select(
+            'gaji_karyawan_sub_variable.id_variable',
+            'gaji_karyawan_sub_variable.nominal')
+            ->where('gaji_karyawan_sub_variable.id_variable','VR-002')
+            ->where('gaji_karyawan_sub_variable.id_karyawan',$_idKaryawan)
+            ->where('gaji_karyawan_sub_variable.id_periode',$idPeriode)
+            ->first();
+            $_tunjanganJabatan = $karyawanSubVariableGaji->nominal;
+            
+            if($_totalUpah <= $_batasNominalLembur && $_tunjanganJabatan == 0)
             {
                 // get rumus (Nominal Lembur) code LM-001
                 $_nominal=0;
                 $c_classRumus = new c_classRumus;
-                $_nominal = $c_classRumus->getRumus('LM-001',$_idKaryawan); 
+                $_nominal = $c_classRumus->getRumusPenggajianPeriode('LM-001',$_idKaryawan, $idPeriode); 
                 $_nominalLembur = $_nominal*$_totJam;
             }
             else
             {
                 $_nominalLembur=0;
             }
-         
+            $idPeriode = $idPeriode +1;
             $dataLembur = new gaji_lembur();
             $dataLembur->id_periode = $idPeriode;
             $dataLembur->id_dept = $karyawanMstGaji->idDepartemen;
@@ -671,6 +629,7 @@ class c_classPenggajian extends Controller
             $dataLembur->nominal = $_nominalLembur;
             $dataLembur->keterangan = $_keterangan;
             $dataLembur->pic = $userLogin;
+           
             $dataLembur->save();
 
             $result = $this->updateDataLemburKaryawanPeriode($idPeriode,$karyawanMstGaji->idKaryawan);
@@ -714,7 +673,6 @@ class c_classPenggajian extends Controller
 
     public function updateDataLemburKaryawanPeriode($idPeriode,$_idKaryawan)
     {
-      
         try
         {
             $listLemburPeriode= DB::table('gaji_lembur')
@@ -738,6 +696,7 @@ class c_classPenggajian extends Controller
             ->update([
                 'nominal' => $_valLembur,
             ]);
+            
             return 'success';
 
         } catch (\Exception $ex) {
@@ -895,4 +854,87 @@ class c_classPenggajian extends Controller
              return response()->json($ex);
          }
      }
+
+    // update hutang perusahaan karyawan
+    public function hutangKaryawanPerusahaan($request)
+    {
+        try
+        {   
+            if(isset($request['id_karyawan']) && isset($request['nominal']))
+            {
+                $idKaryawan = $request['id_karyawan'];
+                $nominal = $request['nominal'];
+            }
+            else
+            {
+                return response()->json(['error' => 'Data ID Karyawan atau nominal belum di set'], 404);
+            }
+        
+            // Ambil hutang perusahaan yang belum lunas
+            $getID = DB::table('karyawan_hutang_perusahaan')
+                ->select('id_hutang', 'total')
+                ->where('id_karyawan', $idKaryawan)
+                ->where('status', 0)
+                ->first();
+
+            if (!$getID) {
+                // Optional: handle jika tidak ada hutang
+                return response()->json(['error' => 'Data hutang tidak ditemukan'], 404);
+            }
+
+            // Ambil detail hutang pertama yang belum dibayar
+            $getIDDetail = DB::table('karyawan_hutang_perusahaan_detail')
+                ->select('id')
+                ->where('id_hutang', $getID->id_hutang)
+                ->where('status_bayar', 0)
+                ->orderBy('id_hutang_detail', 'asc')
+                ->first();
+
+            if (!$getIDDetail) {
+                return response()->json(['error' => 'Detail hutang tidak ditemukan'], 404);
+            }
+
+            DB::beginTransaction();
+            // Update cicilan yang dibayar
+            DB::table('karyawan_hutang_perusahaan_detail')
+                ->where('id', $getIDDetail->id)
+                ->update([
+                    'nominal_bayar' => $nominal,
+                    'status_bayar' => 1,
+                    'tgl_bayar' => Carbon::now()->toDateString()
+                ]);
+
+            // Hitung total angsuran yang sudah dibayar
+            $totalAngsuran = DB::table('karyawan_hutang_perusahaan_detail')
+                ->where('id_hutang', $getID->id_hutang)
+                ->where('status_bayar', 1)
+                ->sum('nominal_bayar');
+
+            // Update hutang utama
+            $updateHutangData = ['total_angsuran' => $totalAngsuran];
+
+            if ($getID->total == $totalAngsuran) {
+                $updateHutangData['status'] = 1;
+            }
+
+            DB::table('hutang_perusahaan_karyawan')
+                ->where('id_hutang', $getID->id_hutang)
+                ->update($updateHutangData);
+
+            // Jika lunas, reset nominal VR-009 ke 0
+            if (isset($updateHutangData['status']) && $updateHutangData['status'] == 1) {
+                DB::table('karyawan_group_sub_variable')
+                    ->where('id_karyawan', $idKaryawan)
+                    ->where('id_variable', 'VR-009')
+                    ->update(['nominal' => 0]);
+            }
+            DB::commit();
+            return 'success';
+        }
+        catch(Exception $ex)
+        {
+            DB::rollback();
+            return response()->json($ex);
+        }
+    }
 }

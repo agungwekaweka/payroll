@@ -1,11 +1,11 @@
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 pt-4">
     <div class="d-flex align-items-center gap-3 mb-3 mb-md-0">
-        <select class="form-select p-2 border border-gray-300 rounded-md" aria-label="Default select example">
+        <!-- <select class="form-select p-2 border border-gray-300 rounded-md" aria-label="Default select example">
             <option selected>-- PILIH PERIODE --</option>
             <option value="1">Januari</option>
             <option value="2">Februari</option>
             <option value="3">Maret</option>
-        </select>
+        </select> -->
 
         <button type="button" id="btnSyncronise" class="btn btn-primary ml-3">
             <i class="fas fa-undo mr-2"></i>GET DATA
@@ -28,14 +28,14 @@
         <thead>
             <tr>
                 <th><input type="checkbox" id="allCheckboxAbsensi"></th>
-                <th>ID</th>
+          
                 <th>ID Periode</th>
                 <th>Departemen</th>
                 <th>Sub Departemen</th>
                 <th>Pos</th>
                 <th>Grade</th>
                 <th>NIK</th>
-                <th>Nama</th>
+                <th class="sticky-col first-col">Nama</th>
                 <th>Tipe Kontrak</th>
                 <th>Skema</th>
                 <th>Total Hari</th>
@@ -47,34 +47,8 @@
                 <th>Alfa</th>
                 <th>Sakit</th>
                 <th>Reff</th>
-                <th>Updated At</th>
             </tr>
         </thead>
-        <tbody>
-            <tr>
-                <td><input type="checkbox" class="row-checkbox"></td>
-                <td>240027</td>
-                <td>INPARK REVENUE</td>
-                <td>Partnership & Support</td>
-                <td>Admin</td>
-                <td>LV-006</td>
-                <td>837483478</td>
-                <td>User Trial</td>
-                <td>PKWT</td>
-                <td>5-2</td>
-                <td>21</td>
-                <td>20</td>
-                <td>9</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>0</td>
-                <td>00-0000-00</td>
-                <td>2025-01-11 14:13:00</td>
-            </tr>
-        </tbody>
     </table>
 </div>
 
@@ -85,35 +59,73 @@ function loadAbsensi() {
     }
 
     $('#tableAbsensi').DataTable({
-        paging: true,
-        searching: true,
-        ordering: true,
-        pageLength: 10,
-        lengthMenu: [10, 25, 50, 100],
-        language: {
-            search: "Search:",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            paginate: {
-                first: "Awal",
-                last: "Akhir",
-                next: "Next",
-                previous: "Previous"
-            },
+    ajax: {
+        url: "{{ url('dashboard/penggajian/absensi-karyawan/listData') }}",
+        dataSrc: 'data',
+        error: function(xhr, error, thrown) {
+            $('#tableAbsensi tbody').html(
+                `<tr><td colspan="5" class="text-center">Gagal memuat data. Silakan coba lagi.</td></tr>`
+            );
+        }
+    },
+    processing: true,  // Menampilkan indikator loading
+    // serverSide: true,  // Gunakan mode server-side untuk data besar
+    deferRender: true, // Optimasi render tabel
+    paging: true,
+    searching: true,
+    ordering: true,
+    pageLength: 10,
+    lengthMenu: [10, 25, 50, 100],
+    language: {
+        search: "Search:",
+        lengthMenu: "Show _MENU_ entries",
+        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+        paginate: {
+            first: "Awal",
+            last: "Akhir",
+            next: "Next",
+            previous: "Previous"
         },
-        scrollY: '400px',
-        scrollCollapse: true,
-        fixedHeader: true,
-        responsive: true,
-        scrollX: true,
-        columnDefs: [{
-            targets: 0,
-            orderable: false,
-            className: 'dt-body-center',
-            render: function(data, type, row) {
-                return `<input type="checkbox" class="rowCheckbox" />`;
-            }
-        }]
+    },
+    scrollY: '400px',
+    fixedHeader: true,
+    responsive: true,
+    scrollX: true,
+    columns: [
+        {data: 'id'},
+        {data: 'idPeriode'},
+        {data: 'departemen'},
+        {data: 'subDepartemen'},
+        {data: 'pos'},
+        {data: 'grade'},
+        {data: 'nik'},
+        {data: 'name',
+            className: 'sticky-col first-col'
+        },
+        {data: 'tipeKontrak'},
+        {data: 'skema'},
+        {data: 'totHari'},
+        {data: 'gajiPokok',
+            className: "text-right",
+            render: $.fn.dataTable.render.number(',', '.', 2)},
+        {data: 'upahHarian',
+            className: "text-right",
+            render: $.fn.dataTable.render.number(',', '.', 2)},
+        {data: 'totMasuk'},
+        {data: 'totPh'},
+        {data: 'totIzin'},
+        {data: 'totAlfa'},
+        {data: 'totSakit'},
+        {data: 'reff'}
+    ],
+    columnDefs: [{
+        targets: 0,
+        orderable: false,
+        className: 'dt-body-center',
+        render: function(data, type, row) {
+            return `<input type="checkbox" class="rowCheckbox" />`;
+        }
+    }]
     });
 
     $('#allCheckboxAbsensi').on('change', function() {
@@ -126,33 +138,75 @@ function loadAbsensi() {
             $('#allCheckboxAbsensi').prop('checked', false);
         }
     });
-
-    addSyncButtonListener();
 }
 
-function addSyncButtonListener() {
-    const btnSyncronise = document.getElementById('btnSyncronise');
+document.addEventListener("DOMContentLoaded", function() {
+    const btnSyncronise = document.getElementById("btnSyncronise");
     if (btnSyncronise) {
-        btnSyncronise.addEventListener('click', function(e) {
-            e.preventDefault();
+ 
+        btnSyncronise.addEventListener("click", function() {
             Swal.fire({
                 title: "Syncronise Absensi",
                 text: "Apakah kamu yakin ingin Syncronise Absensi? Data akan otomatis terinput pada tabel absensi",
                 icon: "warning",
                 showCancelButton: true,
                 cancelButtonColor: "#cbd5e1",
-                confirmButtonText: "Generate",
+                confirmButtonText: "Syncronise",
                 cancelButtonText: "Cancel",
             }).then((result) => {
-                if (result.isConfirmed) {
-                    console.log('Synchronization Confirmed');
-                }
+                if (result.value) {
+                        Swal.fire({
+                        title: 'Mohon Ditunggu !',
+                        html: 'sedang memproses data...',// add html attribute if you want or remove
+                            allowOutsideClick: false,
+                            onBeforeOpen: () => {
+                        Swal.showLoading()
+                        },
+                        });
+                        $.ajax({
+                            url: '{{ url('GetPivotPeriode') }}',
+                            method: 'post',
+                            data: $(this).serialize(),
+                            success: function (response) {
+                                console.log(response);
+                                if (response === 'success') {
+                                    $.ajax({
+                                    url: '{{ url('dashboard/penggajian/absensi-karyawan/submit') }}',
+                                    method: 'post',
+                                    data: $(this).serialize(),
+                                    success: function (response) {
+                                        console.log(response);
+                                        if (response === 'success') {
+                                            Swal.fire({
+                                                title: 'Data tersimpan!',
+                                                type: 'success',
+                                                onClose: function () {
+                                                    window.location.reload();
+                                                }
+                                            })
+                                        } else {
+                                            Swal.fire({
+                                                title: 'Gagal',
+                                                text: 'Silahkan coba lagi',
+                                                type: 'error',
+                                            })
+                                        }
+                                    }
+                                });
+                                } else {
+                                    Swal.fire({
+                                        title: 'Gagal',
+                                        text: 'Silahkan coba lagi',
+                                        type: 'error',
+                                    })
+                                }
+                            }
+                        });
+                    }
             });
         });
-    } else {
-        console.error("Tombol Synchronise tidak ditemukan!");
     }
-}
+});
 
 document.addEventListener('DOMContentLoaded', loadAbsensi);
 </script>

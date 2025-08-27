@@ -192,9 +192,9 @@ class c_MasterUserManagement extends Controller
                     $c_karyawan = new c_classKaryawan;
                     $_status = $c_karyawan->editUsers($_users); 
 
-                     // update Tunjangan Transport Karyawan
-                     $c_karyawan = new c_classPenggajian;
-                     $_status = $c_karyawan->updateTunjanganTransport($_idAbsen);
+                    // update Tunjangan Transport Karyawan
+                    // $c_karyawan = new c_classPenggajian;
+                    // $_status = $c_karyawan->updateTunjanganTransport($_idAbsen);
            
                    // insert history
                    $_keterangan = 'Edit Karyawan | Data : '. json_encode($_users);

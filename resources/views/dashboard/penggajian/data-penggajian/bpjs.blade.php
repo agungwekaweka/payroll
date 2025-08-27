@@ -177,7 +177,7 @@
 <!-- Form Edit BPJS End -->
 
 <div class="d-flex flex-column flex-md-row justify-content-between align-items-center mb-3 pt-4">
-    <div class="d-flex align-items-center gap-3 mb-3 mb-md-0">
+    <!-- <div class="d-flex align-items-center gap-3 mb-3 mb-md-0">
         <select class="form-select p-2 border border-gray-300 rounded-md" aria-label="Default select example">
             <option selected>-- PILIH PERIODE --</option>
             <option value="1">Januari</option>
@@ -188,8 +188,8 @@
         <button type="button" id="iTambahBPJS" class="btn btn-primary w-auto ml-3">
             <i class="fas fa-plus mr-3"></i>Tambah
         </button>
-    </div>
-    <div class="dropdown">
+    </div> -->
+    <!-- <div class="dropdown">
         <button class="btn btn-dark dropdown-toggle" type="button" data-toggle="dropdown" aria-expanded="false">
             Action Export
         </button>
@@ -197,7 +197,7 @@
             <a class="dropdown-item" id="iExportSelectedCheckBox">Export Selected Checkbox</a>
             <a class="dropdown-item" id="iExportAll">Export All</a>
         </div>
-    </div>
+    </div> -->
 </div>
 
 <div class="table-responsive">
@@ -249,29 +249,6 @@
                         type="text" name="totBpjsKesPerusahaan" readonly></th>
             </tr>
         </tfoot>
-        <tbody>
-            <td></td>
-            <td>IT</td>
-            <td>Aplikasi & System</td>
-            <td>Aplikasi & System</td>
-            <td>Grade</td>
-            <td>1708</td>
-            <td>82933</td>
-            <td>User Trial</td>
-            <td><span class="badge bg-success text-dark">
-                    Normal
-                </span>
-            </td>
-            <td>24000</td>
-            <td>12000</td>
-            <td>12000</td>
-            <td>12000</td>
-            <td>12000</td>
-            <td>12000</td>
-            <td><button type="button" id="iEditBPJS" class="btn btn-warning">
-                    <i class="fas fa-edit"></i>
-                </button></td>
-        </tbody>
     </table>
 </div>
 
@@ -282,36 +259,106 @@ function loadBPJS() {
     }
 
     $('#tableBPJS').DataTable({
-        paging: true,
-        searching: true,
-        ordering: true,
-        pageLength: 10,
-        lengthMenu: [10, 25, 50, 100],
-        language: {
-            search: "Search:",
-            lengthMenu: "Show _MENU_ entries",
-            info: "Showing _START_ to _END_ of _TOTAL_ entries",
-            paginate: {
-                first: "Awal",
-                last: "Akhir",
-                next: "Next",
-                previous: "Previous"
-            },
+    ajax: {
+        type: "GET",
+        url: "{{ url('dashboard/penggajian/bpjs/data') }}",
+        dataSrc: "data",
+        headers: {
+            "X-CSRF-TOKEN": $('meta[name="csrf-token"]').attr('content')
         },
-        scrollY: '400px',
-        scrollCollapse: true,
-        fixedHeader: true,
-        responsive: true,
-        scrollX: true,
-        columnDefs: [{
-            targets: 0,
-            orderable: false,
-            className: 'dt-body-center',
-            render: function(data, type, row) {
-                return `<input type="checkbox" class="rowCheckbox" />`;
+        complete: function(xhr) {
+            if (xhr.status !== 200) { // Periksa jika respons tidak berhasil
+                console.log("Error:", xhr);
+            } else if (xhr.responseJSON && xhr.responseJSON.total) {
+                $('input[name="totalBpjsTk"]').val(xhr.responseJSON.total["iTotalBpjsTk"]);
+                $('input[name="totalBpjsJp"]').val(xhr.responseJSON.total["iTotalBpjsJp"]);
+                $('input[name="totalBpjsKes"]').val(xhr.responseJSON.total["iTotalBpjsKesehatan"]);
+                $('input[name="totBpjsTkPerusahaan"]').val(xhr.responseJSON.total["iTotalBpjsTkPerusahaan"]);
+                $('input[name="totBpjsJpPerusahaan"]').val(xhr.responseJSON.total["iTotalBpjsJpPerusahaan"]);
+                $('input[name="totBpjsKesPerusahaan"]').val(xhr.responseJSON.total["iTotalBpjsKesPerusahaan"]);
             }
-        }]
+        }
+    },
+    processing: true,  
+    // serverSide: true,  
+    paging: true,
+    searching: true,
+    ordering: true,
+    pageLength: 10,
+    lengthMenu: [10, 25, 50, 100],
+    scrollY: '400px',
+    fixedHeader: true,
+    responsive: true,
+    scrollX: true,
+    language: {
+        search: "Search:",
+        lengthMenu: "Show _MENU_ entries",
+        info: "Showing _START_ to _END_ of _TOTAL_ entries",
+        paginate: {
+            first: "Awal",
+            last: "Akhir",
+            next: "Next",
+            previous: "Previous"
+        }
+    },
+    columns: [
+        {data: 'id'},
+        {data: 'id_departemen'},
+        {data: 'subDepartemen'},
+        {data: 'pos'},
+        {data: 'grade'},
+        {data: 'id_absen'},
+        {data: 'username'},
+        {data: 'name'},
+        {data: 'tipeBpjs',
+            render: function(data) {
+                let status, color;
+                if (data == '0') {
+                    status = 'Normal';
+                    color = 'green';
+                } else if (data == '1') {
+                    status = 'Perusahaan';
+                    color = 'orange';
+                } else if (data == '2') {
+                    status = 'Tidak Ikut';
+                    color = 'red';
+                } else {
+                    status = 'Unknown';
+                    color = 'gray';
+                }
+                return `<span style="color:${color}">${status}</span>`;
+            }
+        },                  
+        {data: 'bpjsTk', className: "text-right", render: $.fn.dataTable.render.number(',', '.', 2)},
+        {data: 'bpjsJp', className: "text-right", render: $.fn.dataTable.render.number(',', '.', 2)},
+        {data: 'bpjsKes', className: "text-right", render: $.fn.dataTable.render.number(',', '.', 2)},
+        {data: 'bpjsTkPerusahaan', className: "text-right", render: $.fn.dataTable.render.number(',', '.', 2)},
+        {data: 'bpjsJpPerusahaan', className: "text-right", render: $.fn.dataTable.render.number(',', '.', 2)},
+        {data: 'bpjsKesPerusahaan', className: "text-right", render: $.fn.dataTable.render.number(',', '.', 2)},
+        { 
+            data: 'action', 
+            name: 'action', 
+            orderable: false, 
+            searchable: false,
+            render: function(data, type, row) {
+                return `
+                    <button type="button" id="iEditBpjs" class="btn btn-warning edit-btn-bpjs" data-id="${row.id_absen}">
+                        <i class="fas fa-edit"></i>
+                    </button>
+                `;
+            }
+        }
+    ],
+    columnDefs: [{
+        targets: 0,
+        orderable: false,
+        className: 'dt-body-center',
+        render: function() {
+            return `<input type="checkbox" class="rowCheckbox" />`;
+        }
+    }]
     });
+
 
     $('#selectAllCheckbox').on('change', function() {
         const checked = $(this).is(':checked');
@@ -358,12 +405,13 @@ function hideFormEditBPJS() {
 }
 
 document.addEventListener("DOMContentLoaded", function() {
-    const editBPJSButton = document.getElementById("iEditBPJS");
-    if (editBPJSButton) {
-        editBPJSButton.addEventListener("click", function() {
-            showFormEditBPJS();
-        });
-    }
+    document.addEventListener("click", function(event) {
+        let editButton = event.target.closest(".edit-btn-bpjs");
+        if (editButton) {
+            let dataID = editButton.getAttribute("data-id"); // Correct way to get the ID
+            window.location = '{{ url('dashboard/penggajian/bpjs/data/edit') }}/'+dataID;
+        }
+    });
 })
 
 document.addEventListener('DOMContentLoaded', loadBPJS);

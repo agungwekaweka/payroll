@@ -259,8 +259,9 @@ class c_master_upahKaryawan extends Controller
         }
 
         Excel::import(new UsersUpahKaryawan,$file);
-     
-		return redirect('master-data-upah-karyawan');
+        // return "successs";
+		// return redirect('master-data-upah-karyawan');
+        return redirect()->back();
         } catch (\Exception $ex) {
             return response()->json([$ex]);
         }

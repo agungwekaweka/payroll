@@ -33,9 +33,7 @@ foreach ($routes as $route) {
 Route::post('login/submit', 'c_Login@submit');
 Route::post('logout', 'c_Login@logout');
 Route::get('reset-password', 'c_Login@resetPassword');
-
 Route::post('reset-password-allUser', 'c_MasterUserManagement@resetPasswordAllUser');
-
 Route::post('reset-password/submit', 'c_Login@resetPasswordSubmit');
 
 // addtitional
@@ -44,6 +42,7 @@ Route::get('list_periode', 'c_Dashboard@listPeriode');
 Route::get('list_periode_success', 'c_Dashboard@listPeriodeSuccess');
 Route::get('list_subDepartemen/{id}', 'c_Dashboard@listSubDepartemen');
 Route::get('list_grade','c_Dashboard@listGrade');
+Route::get('list_karyawan', 'c_Dashboard@listKaryawan');
 Route::get('skema_hariKerja', 'c_Dashboard@skemaHariKerja');
 
 Route::middleware(['check.login'])->group(function () {
@@ -56,7 +55,6 @@ Route::middleware(['check.login'])->group(function () {
     Route::get('dashboard', 'c_Overview@index');
     Route::get('dashboard/data', 'c_Overview@listData');
     Route::post('dashboard/payslip', 'c_Overview@updateStatusPayslip');
-    
     Route::get('dashboard/data-bpjs', 'c_Overview@listDataBpjs');
 
     // informasi karyawan
@@ -194,6 +192,7 @@ Route::middleware(['check.login'])->group(function () {
         Route::get('dashboard/master/grade', 'c_master_grade@index');
         Route::get('dashboard/master/grade/list', 'c_master_grade@list');
         Route::get('dashboard/master/grade/data', 'c_master_grade@listData');
+        Route::post('dashboard/master/grade/dataList', 'c_master_grade@data');
         Route::get('dashboard/master/grade/edit/{id}', 'c_master_grade@edit');
         Route::post('dashboard/master/grade/submit', 'c_master_grade@submit');
 
@@ -208,9 +207,12 @@ Route::middleware(['check.login'])->group(function () {
 
     // Hutang Karyawan
         // Anggota 
-        Route::get('dashboard/hutang-perusahaan/anggota', 'c_penggajian_generateGaji@index');
-        Route::get('dashboard/hutang-perusahaan/anggota/list', 'c_penggajian_generateGaji@list');
-        Route::get('dashboard/hutang-perusahaan/anggota/data', 'c_penggajian_generateGaji@listData');
+        Route::get('dashboard/hutang-perusahaan/anggota', 'c_hutangPerusahaan_anggota@index');
+        Route::get('dashboard/hutang-perusahaan/anggota/list', 'c_hutangPerusahaan_anggota@list');
+        Route::get('dashboard/hutang-perusahaan/anggota/data', 'c_hutangPerusahaan_anggota@listData');
+        Route::post('dashboard/hutang-perusahaan/anggota/dataList', 'c_hutangPerusahaan_anggota@data');
+        Route::post('dashboard/hutang-perusahaan/anggota/pelunasan', 'c_hutangPerusahaan_anggota@submitPelunasan');
+        Route::post('dashboard/hutang-perusahaan/anggota/submit', 'c_hutangPerusahaan_anggota@submit');
 
    // Penggajian 
         // generate gaji
@@ -260,6 +262,8 @@ Route::middleware(['check.login'])->group(function () {
         Route::get('dashboard/penggajian/data-lembur/data', 'c_penggajian_dataLembur@data');
         Route::get('dashboard/penggajian/data-lembur/list', 'c_penggajian_dataLembur@list');
         Route::get('dashboard/penggajian/data-lembur/list/data', 'c_penggajian_dataLembur@listData');
+        Route::post('dashboard/penggajian/data-lembur/list/data-edit', 'c_penggajian_dataLembur@dataEdit');
+        
         Route::get('namaKaryawanPeriode', 'c_penggajian_dataLembur@getKaryawanGajiPeriode');
         Route::post('dashboard/penggajian/data-lembur/submit', 'c_penggajian_dataLembur@submit');
         Route::post('penggajian/data-lembur/submitModule', 'c_penggajian_dataLembur@submitModule');
@@ -268,12 +272,14 @@ Route::middleware(['check.login'])->group(function () {
         // Bpjs  
         Route::get('dashboard/penggajian/bpjs', 'c_penggajian_bpjs@index');
             // Action Data
+            Route::post('penggajian/bpjs-syncronise', 'c_penggajian_bpjs@actionSyncronise');
             Route::get('penggajian/bpjs-exportAll', 'c_penggajian_bpjs@exportAll');
             Route::get('penggajian/bpjs/actionExport/{id}/{idData}', 'c_penggajian_bpjs@actionExport');
         Route::get('dashboard/penggajian/bpjs/data', 'c_penggajian_bpjs@data');
         Route::get('dashboard/penggajian/bpjs/data/edit/{id}', 'c_penggajian_bpjs@dataEdit');
         Route::post('dashboard/penggajian/bpjs/submit', 'c_penggajian_bpjs@submit');
         Route::post('dashboard/penggajian/bpjs/updateVariable', 'c_penggajian_bpjs@updateVariable');
+        Route::post('dashboard/penggajian/bpjs/update', 'c_penggajian_bpjs@updateVariableBPJSKaryawanPeriode');
         
         Route::post('dashboard/penggajian/bpjs/data-karyawan/{idKaryawan}', 'c_penggajian_bpjs@listDataBpjs');
         Route::get('dashboard/penggajian/bpjs/export-all', 'c_penggajian_bpjs@exportBpjsAllData');

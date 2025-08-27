@@ -22,7 +22,8 @@ class c_penggajian_bpjs extends Controller
         return view('dashboard.penggajian.bpjs.list');
     }
 
-    public function data() {
+    public function data() 
+    {
     // get ID Periode
     $c_classPenggajian = new c_classPenggajian;
     $_val = $c_classPenggajian->getPeriodeBerjalan(); 
@@ -389,6 +390,129 @@ class c_penggajian_bpjs extends Controller
                return response()->json($ex);
            }
     }
+
+    public function actionSyncronise(Request $request)
+    {
+        $userLogin = request()->session()->get('username');
+
+        try {
+            DB::beginTransaction();
+            // get ID Periode
+            $c_classPenggajian = new c_classPenggajian;
+            $_val = $c_classPenggajian->getPeriodeBerjalan(); 
+            if( is_null($_val))
+            {
+             // nothing
+            }
+            else
+            {
+                // get Data Periode
+                $periode = $_val;
+                $idPeriode = $periode->idPeriode;
+            }
+            $dataKaryawanPeriode = DB::table('gaji_karyawan')
+            ->select('id_karyawan','tipe_bpjs')
+            ->where('id_periode',$idPeriode)
+            ->get();
+
+            foreach($dataKaryawanPeriode as $v)
+            {
+                $_idKaryawan = $v->id_karyawan;
+                $_tipeBpjs = $v->tipe_bpjs;
+                // Update Bpjs Karyawan Periode Penggajian
+                $c_penggajian = new c_classPenggajian;
+                $_status = $c_penggajian->updateBpjsKaryawanPeriode($idPeriode,$_idKaryawan,$_tipeBpjs); 
+            }
+
+            // update Master
+            $dataKaryawanMaster = DB::table('users')
+            ->select('id_absen','tipe_bpjs')
+            ->where('status','1')
+            ->get();
+
+            foreach($dataKaryawanMaster as $v)
+            {
+                $_idKaryawan = $v->id_absen;
+                $_tipeBpjs = $v->tipe_bpjs;
+
+                $c_karyawan = new c_classKaryawan;
+                $_status = $c_karyawan->updateVariableBPJSKaryawan($_idKaryawan, $_tipeBpjs);    
+            }
  
+            // insert history
+            $_keterangan = 'Syncronise BPJS';
+            $_requestValue['tipe'] = 1;
+            $_requestValue['menu'] ='Penggajian';
+            $_requestValue['module'] = 'Bpjs';
+            $_requestValue['keterangan'] = $_keterangan;
+            $_requestValue['pic'] = $userLogin;
+
+            $c_class = new c_classHistory;
+            $c_class = $c_class->insertHistory($_requestValue);   
+
+            $result = 'success';
+            DB::commit();
+            return $result;
+        } catch (\Exception $ex) {
+            DB::rollBack();
+            return response()->json($ex);
+        }
+    }
+
+    public function updateVariableBPJSKaryawanPeriode(Request $request)
+    {
+        $userLogin = request()->session()->get('username');
+        $idPeriode = $request->idPeriode;
+        $idKaryawan = $request->idKaryawan;
+        $variabels = $request->input('variabels'); // <- ini akan jadi array
+
+        try
+        {
+           $variabels = $request->input('variabels', []);
+            $targetCodes = ['VR-013','VR-014', 'VR-015', 'VR-016', 'VR-017', 'VR-018'];
+
+            // Filter array hanya yang key-nya ada di $targetCodes
+            $filtered = array_filter($variabels, function ($value, $key) use ($targetCodes) {
+                return in_array($key, $targetCodes);
+            }, ARRAY_FILTER_USE_BOTH);
+
+            // Lakukan proses update hanya untuk yang terfilter
+            foreach ($filtered as $kodeVar => $nominal) {
+            
+                DB::table('gaji_karyawan_sub_variable')
+                    ->where('id_periode', $idPeriode)
+                    ->where('id_karyawan', $idKaryawan)
+                    ->where('id_variable', $kodeVar)
+                    ->update([
+                        'nominal' => str_replace(',', '', $nominal), // pastikan nominal bersih dari koma
+                ]);
+
+                // insert history
+                $_keterangan = 'Update BPJS';
+                $_requestValue['tipe'] = 1;
+                $_requestValue['menu'] ='Penggajian';
+                $_requestValue['module'] = 'Bpjs';
+                $_requestValue['keterangan'] = 'Perubahan Variable BPJS | ID Periode : '. $idPeriode . ' ID Karyawan : '. $idKaryawan . ' Variable : '. $kodeVar . ' Nominal : '. str_replace(',', '', $nominal);
+                $_requestValue['pic'] = $userLogin;
+
+                $c_class = new c_classHistory;
+                $c_class = $c_class->insertHistory($_requestValue);   
+            }
+
+            // hitung THP
+            // $c_classPenggajian = new c_classPenggajian;
+            // $result = $c_classPenggajian->hitungThpAllPeriode($idPeriode);
+
+            DB::commit();
+            return 'success';
+        }
+        catch(\Exception $ex)
+        {
+            return $ex;
+            DB::rollBack();
+            return response()->json($ex);
+        }
+       
+    }
 
 }

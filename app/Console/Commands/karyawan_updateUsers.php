@@ -44,7 +44,7 @@ class karyawan_updateUsers extends Command
     public function handle()
     {
         try {
-            // getData Karyawan validity Periode cuti expied
+            // getData Karyawan
             $serviceKaryawan = new service_karyawan();
             $result['update_masterUsers'] = $serviceKaryawan->update_masterUser();
          

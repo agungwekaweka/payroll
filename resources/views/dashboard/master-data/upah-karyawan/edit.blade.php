@@ -100,7 +100,7 @@
                                         <select class="form-control" id="iTipeBpjs" name="tipeBpjs">
                                         <option value="{{ $data['user']->tipeBpjs }}" selected="selected">{{ $data['user']->tipeBpjs }}</option>
                                             <option value="0">(0) Normal</option>
-                                            <option value="1">(1) Perusahaan</option>
+                                            <!-- <option value="1">(1) Perusahaan</option> -->
                                             <option value="2">(2) Tidak Ikut</option>
                                         </select>
                                </td>
@@ -175,19 +175,17 @@
                                             
                                             <label class="custom-control-label" >{{ $m['variable'] }}</label>
 
-                                            @if($i_ <= 7)  
+                                            @if($i_ <= 10)  
                                              <!-- disable variable tidak diperlukan -->
-                                             @if($m['id_variable']=='VR-006')
+                                             @if($m['id_variable']=='VR-006' || $m['id_variable']=='VR-010' || $m['id_variable']=='VR-011')
                                             <input name="variabels[{{ $m['id_variable'] }}]" type="text" class="form-control" id="{{ $m['id_variable'] }}" value="{{ number_format($m['nominal']) }}"readOnly >
                                             @else
                                             <input name="variabel[{{ $m['id_variable'] }}]" type="text" class="form-control" id="{{ $m['id_variable'] }}" value="{{ $m['nominal'] }}" >
-                                            
                                             @endif
                                            
                                             @if($m['id_variable']=='VR-007' || $m['id_variable']=='VR-012')
                                             <textarea name="variabel[ket-{{ $m['id_variable'] }}]" class="form-control" id="ket-{{ $m['id_variable'] }}" style="height: 137px" placeholder="Keterangan...">{{ $m['keterangan'] }}</textarea>
                                             @endif
-                                           
                                             @else
                                             <input name="variabels[{{ $m['id_variable'] }}]" type="text" class="form-control" id="{{ $m['id_variable'] }}" value="{{ number_format($m['nominal']) }}"readOnly >
                                             @endif
@@ -207,7 +205,7 @@
                         <div class="card-footer bg-whitesmoke">
                             <div class="row justify-content-end">
                                 <div class="col-sm-12 col-lg-2 mt-2 mb-lg-0">
-                                    <button type="button" class="btn btn-block btn-outline-danger" onclick="window.location = '{{ url('master-data-upah-karyawan') }}'">
+                                    <button type="button" class="btn btn-block btn-outline-danger" onclick="window.location = '{{ url()->previous() }}'">
                                         <i class="fas fa-arrow-left mr-2"></i>Kembali
                                     </button>
                                 </div>
